@@ -49,7 +49,10 @@ art_make(
                 uboonecode_uboone_EventConnectedness
                 uboonecode_uboone_HyperonProduction_Algorithms
                 uboonecode_uboone_HyperonProduction_SubModules
+                uboonecode_uboone_HyperonProduction_Tools
+                
                 CCKaonHeaders
+
 )
 
 install_headers()

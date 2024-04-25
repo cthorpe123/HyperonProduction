@@ -35,6 +35,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 
 #include "ubana/KReco/TrackRebuilder/TrackRebuilder.h"
+#include "ubana/HyperonProduction/Tools/LambdaRecoCheat.h"
+#include "ubana/HyperonProduction/Tools/ChargedSigmaRecoCheat.h"
 
 #include <memory>
 
@@ -62,12 +64,17 @@ class hyperon::HitCollectionProducer : public art::EDProducer {
    const std::string f_InputHitCollectionLabel;
    kaon_reconstruction::TrackRebuilder trkrebuilder;
 
+   //LambdaRecoCheat hitcollectiontool;
+   ChargedSigmaRecoCheat hitcollectiontool;
+
+
 };
 
 
 hyperon::HitCollectionProducer::HitCollectionProducer(fhicl::ParameterSet const& p)
    : EDProducer{p},
-   f_InputHitCollectionLabel(p.get<std::string>("InputHitCollectionLabel","gaushit"))
+   f_InputHitCollectionLabel(p.get<std::string>("InputHitCollectionLabel","gaushit")),
+   hitcollectiontool(p.get<fhicl::ParameterSet>("HitCollectionTool"))
 {
    produces<std::vector<recob::Hit>>();
    produces<std::vector<recob::Track>>();
@@ -78,6 +85,30 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
    std::unique_ptr<std::vector<recob::Hit>> hitcol(new std::vector<recob::Hit>);
    std::unique_ptr<std::vector<recob::Track>> trackcol(new std::vector<recob::Track>);
 
+   std::vector<std::vector<art::Ptr<recob::Hit>>> hits_v;
+   std::vector<std::map<art::Ptr<recob::Hit>,art::Ptr<recob::SpacePoint>>> r_hitspacepointmap_v;
+   std::vector<pandora::CartesianVector> r_vertex_v;
+
+   hitcollectiontool.LoadEvent(e);
+   hitcollectiontool.MakeHitCollections(hits_v,r_hitspacepointmap_v,r_vertex_v);
+
+   for(size_t i_c=0;i_c<hits_v.size();i_c++){
+     if(hits_v.at(i_c).size() < 3) continue;
+     std::cout << "Rebuilding track" << std::endl;
+     auto status = trkrebuilder.Run(hits_v.at(i_c),r_vertex_v.at(i_c),r_hitspacepointmap_v.at(i_c));
+     if(status == STATUS_CODE_SUCCESS){ 
+       recob::Track rebuilt_track = trkrebuilder.get_rebuild_reco_track(); 
+       trackcol->push_back(rebuilt_track);
+       std::cout << "Rebuild track length: " << rebuilt_track.Length() << std::endl;
+     }
+   }
+
+  // Merge the hit collections together and write to event
+  for(size_t i=0;i<hits_v.size();i++)
+   for(size_t j=0;j<hits_v.at(i).size();j++)
+     hitcol->push_back(*hits_v.at(i).at(j));
+
+/*
    art::Handle<std::vector<recob::Hit>> Handle_Hit;
    std::vector<art::Ptr<recob::Hit>> Vect_Hit;
    
@@ -103,7 +134,6 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
   art::FindManyP<recob::Hit>* Assoc_TrackHit = new art::FindManyP<recob::Hit>(Vect_Tracks,e,"pandora");
   art::FindManyP<recob::Vertex> Assoc_PFParticleVertex = art::FindManyP<recob::Vertex>(Vect_PFParticle,e,"pandora");
   art::FindManyP<recob::SpacePoint> Assoc_HitSpacePoint = art::FindManyP<recob::SpacePoint>(Vect_Hit,e,"pandora");
-
 
   size_t neutrinoID = 99999;
   pandora::CartesianVector vertex_pos(-1000,-1000,-1000); 
@@ -142,28 +172,6 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
   } 
 
 
-  /// Other bits needed to regenerate track
-  /*
-  std::cout << "Getting Spacepoint data products" << std::endl;
-  art::Handle< std::vector<recob::SpacePoint> > spacepointHandle;
-  std::vector< art::Ptr<recob::SpacePoint> > spacepointVector;
-  //std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>> spacepointToHitMap;
-  if(!e.getByLabel("pandora",spacepointHandle))
-    throw cet::exception("HitCollectionProducer") << "No SpacePoint product found!" << std::endl;
-  art::fill_ptr_vector(spacepointVector,spacepointHandle);
-  art::FindOneP<recob::Hit> findSPToHit(spacepointVector, e, "pandora"); 
-  */
-  /*
-  std::cout << "Making hit-spacepoint maps" << std::endl;
-  for (unsigned int iSP = 0; iSP < spacepointVector.size(); ++iSP) { 
-    const art::Ptr<recob::SpacePoint> spacepoint = spacepointVector.at(iSP);
-    const art::Ptr<recob::Hit> hit = findSPToHit.at(iSP);
-    //spacepointToHitMap[spacepoint] = hit;
-    hitToSpacePointMap[hit] = spacepoint;
-  }
-  std::cout << "Done making hit-spacepoint maps" << std::endl;
-  */
-
   // get tracks
   std::cout << "Getting tracks" <<  std::endl;
   art::Handle< std::vector<recob::Track> > trackListHandle;
@@ -173,7 +181,9 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
   }
   art::FindManyP<recob::Hit> hits_from_tracks(trackListHandle, e,"pandora");
   std::cout << "Done getting tracks" << std::endl;
+ */
 
+/*
   if(hits.size()){
     std::cout << "Rebuilding track" << std::endl;
     auto status = trkrebuilder.Run(hits,vertex_pos,hitToSpacePointMap);
@@ -184,6 +194,7 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
       std::cout << "Rebuild track length: " << rebuilt_track.Length() << std::endl;
     }
   }
+*/
 
   e.put(std::move(hitcol));
   e.put(std::move(trackcol));
