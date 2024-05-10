@@ -36,6 +36,7 @@
 
 #include "ubana/KReco/TrackRebuilder/TrackRebuilder.h"
 #include "ubana/HyperonProduction/Tools/LambdaRecoCheat.h"
+#include "ubana/HyperonProduction/Tools/LambdaRecoCheat2.h"
 #include "ubana/HyperonProduction/Tools/ChargedSigmaRecoCheat.h"
 
 #include <memory>
@@ -64,38 +65,45 @@ class hyperon::HitCollectionProducer : public art::EDProducer {
    const std::string f_InputHitCollectionLabel;
    kaon_reconstruction::TrackRebuilder trkrebuilder;
 
-   //LambdaRecoCheat hitcollectiontool;
-   //ChargedSigmaRecoCheat hitcollectiontool;
-   std::unique_ptr<HitCollectionToolBase> hitcollectiontool = nullptr; 
-
    std::string collectiontooltype;  
+   fhicl::ParameterSet f_HitCollectionTool;
 
 };
 
 
 hyperon::HitCollectionProducer::HitCollectionProducer(fhicl::ParameterSet const& p)
    : EDProducer{p},
-   f_InputHitCollectionLabel(p.get<std::string>("InputHitCollectionLabel","gaushit"))
+   f_InputHitCollectionLabel(p.get<std::string>("InputHitCollectionLabel","gaushit")),
+   f_HitCollectionTool(p.get<fhicl::ParameterSet>("HitCollectionTool"))
+   
 {
    produces<std::vector<recob::Hit>>();
    produces<std::vector<recob::Track>>();
+   produces<art::Assns<recob::Track,recob::Hit>>();
 
    collectiontooltype = p.get<fhicl::ParameterSet>("HitCollectionTool").get<std::string>("HitCollectionToolType");  
 
-   if(collectiontooltype == "LambdaRecoCheat")
-       hitcollectiontool = std::make_unique<LambdaRecoCheat>(p.get<fhicl::ParameterSet>("HitCollectionTool")); 
-   else if(collectiontooltype == "ChargedSigmaRecoCheat")
-       hitcollectiontool = std::make_unique<ChargedSigmaRecoCheat>(p.get<fhicl::ParameterSet>("HitCollectionTool")); 
-  
-   if(hitcollectiontool == nullptr)
-     throw cet::exception("HitCollectionProducer") << "Not hit collection tool selected" << std::endl;
 
 }
 
 void hyperon::HitCollectionProducer::produce(art::Event& e)
 {
-   std::unique_ptr<std::vector<recob::Hit>> hitcol(new std::vector<recob::Hit>);
+ 
+   std::unique_ptr<HitCollectionToolBase> hitcollectiontool = nullptr; 
+
+   if(collectiontooltype == "LambdaRecoCheat")
+     hitcollectiontool = std::make_unique<LambdaRecoCheat>(f_HitCollectionTool); 
+   else if(collectiontooltype == "LambdaRecoCheat2")
+     hitcollectiontool = std::make_unique<LambdaRecoCheat2>(f_HitCollectionTool); 
+   else if(collectiontooltype == "ChargedSigmaRecoCheat")
+     hitcollectiontool = std::make_unique<ChargedSigmaRecoCheat>(f_HitCollectionTool); 
+  
+   if(hitcollectiontool == nullptr)
+     throw cet::exception("HitCollectionProducer") << "Not hit collection tool selected" << std::endl;
+ 
+  std::unique_ptr<std::vector<recob::Hit>> hitcol(new std::vector<recob::Hit>);
    std::unique_ptr<std::vector<recob::Track>> trackcol(new std::vector<recob::Track>);
+   std::unique_ptr<art::Assns<recob::Track, recob::Hit>> anaTrackHitAssociations(new art::Assns<recob::Track, recob::Hit>);
 
    std::vector<std::vector<art::Ptr<recob::Hit>>> hits_v;
    std::vector<std::map<art::Ptr<recob::Hit>,art::Ptr<recob::SpacePoint>>> r_hitspacepointmap_v;
@@ -112,6 +120,14 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
        recob::Track rebuilt_track = trkrebuilder.get_rebuild_reco_track(); 
        trackcol->push_back(rebuilt_track);
        std::cout << "Rebuild track length: " << rebuilt_track.Length() << std::endl;
+
+	lar_pandora::HitVector anaHitCollection_rebuild_tmp;
+	for(auto hitptr : hits_v.at(i_c)){
+	  anaHitCollection_rebuild_tmp.push_back(hitptr);
+	}
+
+       util::CreateAssn(*this, e, *(trackcol.get()), anaHitCollection_rebuild_tmp, *(anaTrackHitAssociations.get()));
+
      }
    }
 
@@ -122,6 +138,8 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
 
   e.put(std::move(hitcol));
   e.put(std::move(trackcol));
+  e.put(std::move(anaTrackHitAssociations));
+  
 
   return;
 

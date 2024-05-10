@@ -32,11 +32,20 @@ void LambdaRecoCheat::MakeHitCollections(std::vector<std::vector<art::Ptr<recob:
   std::vector<bool> got_start(2,false);
 
   for(size_t i_d=0;i_d<lambda_children.size();i_d++){
-    GetTruthMatchedHits(lambda_children.at(i_d),r_hits.at(i_d),r_hitspacepointmap.at(i_d));
-    if(r_hits.at(i_d).size()){ 
-      art::Ptr<recob::SpacePoint> point = r_hitspacepointmap.at(i_d).begin()->second;
-      r_vertex.at(i_d) = pandora::CartesianVector(point->XYZ()[0],point->XYZ()[1],point->XYZ()[2]);
+
+    unsigned int particle_id = lambda_children.at(i_d);
+
+    switch (Alg){
+      case 1: GetTruthMatchedHits(particle_id,r_hits.at(i_d),r_hitspacepointmap.at(i_d)); break;
+      case 2: GetTruthMatchedHits2(particle_id,r_hits.at(i_d),r_hitspacepointmap.at(i_d)); break;
+      case 3: GetTruthMatchedHits3(particle_id,r_hits.at(i_d),r_hitspacepointmap.at(i_d)); break;
     }
+
+    art::Ptr<simb::MCParticle> daughter = partByID.at(particle_id);
+    geo::Point_t point = {daughter->Vx(),daughter->Vy(),daughter->Vz()};
+    geo::Vector_t sce_corr = SCE->GetPosOffsets(point);
+    r_vertex.at(i_d) = pandora::CartesianVector(point.X()-sce_corr.X()+1.76,point.Y()+sce_corr.Y(),point.Z()+sce_corr.Z()+0.1);
+
   } 
 
   std::cout << "Hits found: " << r_hits.at(0).size() << " " << r_hits.at(1).size() << std::endl;

@@ -1,0 +1,92 @@
+#include "time_memory_tracker_microboone.fcl"
+#include "services_microboone.fcl"
+
+#include "microboone_eventweight_service.fcl"
+#include "detectorclocks.fcl" 
+#include "detectorproperties.fcl" 
+#include "geometry.fcl" 
+#include "larproperties.fcl" 
+#include "services_microboone_basic.fcl"
+#include "config_particle_identification.fcl"
+#include "config_particle_identification_fiducialvolume.fcl"
+#include "config_particle_identification_braggalgo.fcl"
+#include "config_particle_identification_producerlabels.fcl"
+#include "shrreco3d.fcl"
+
+process_name: HitCollectionProducer 
+
+services:
+{
+  TFileService: { fileName: "HitCollectionProducer.root" }
+  @table::microboone_services_reco
+  @table::microboone_simulation_services
+  SpaceCharge:              @local::microboone_spacecharge
+  DetectorClocksService:    @local::microboone_detectorclocks
+
+}
+
+services.SpaceCharge.EnableCorrSCE:       true
+services.SpaceCharge.EnableSimEfieldSCE:  true
+services.SpaceCharge.EnableSimSpatialSCE: true
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+services.DetectorPropertiesService.NumberTimeSamples: 6400
+services.DetectorPropertiesService.ReadOutWindowSize: 6400
+
+#source is now a root file
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1            # Number of events to create
+}
+
+source.inputCommands: [ "keep *" ]
+
+physics:
+{	
+  producers:
+  {
+   HitCollectionProducer:
+   {
+      module_type:    "HitCollectionProducer"
+   }		
+  }
+
+  filters:
+  {
+  } 
+
+  analyzers:
+  {
+  }
+ 
+  prod:  [ HitCollectionProducer  ]
+  stream1:  [ out1 ]
+  end_paths:     [ stream1 ] 
+}
+
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName: "HitCollectionProducer.root"    #default file name, can override from command line with -o or --output
+   dataTier: "reconstructed"
+   fastCloning: false
+ } 
+}
+
+
+physics.producers.HitCollectionProducer.HitCollectionTool: {
+HitCollectionToolType: "LambdaRecoCheat"
+IsData: false
+HitFraction: 0.01
+G4ModuleLabel: "largeant"
+HitModuleLabel: "gaushit"
+HitTruthAssnLabel: "gaushitTruthMatch" 
+HitSpacePointAssnLabel: "pandora"
+HitTruthAssnLabel: "gaushitTruthMatch" 
+TrueRecoTolerance: 2.0
+Alg: 3
+}
+

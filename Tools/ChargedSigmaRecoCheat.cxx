@@ -10,7 +10,6 @@ void ChargedSigmaRecoCheat::MakeHitCollections(std::vector<std::vector<art::Ptr<
     std::vector<pandora::CartesianVector>& r_vertex) const {
 
   // Iterate through the list of particles - find any ChargedSigmas and their decay products
-  std::vector<unsigned int> sigma_children;
   unsigned int pion_trkid = 0, sigma_trkid = 0;
   for(const art::Ptr<simb::MCParticle> &g4p : Vect_G4){
     if(g4p->Mother() != 0 || !(g4p->PdgCode() == 3222 || g4p->PdgCode() == 3112) || g4p->EndProcess() != "Decay") continue;
@@ -25,20 +24,26 @@ void ChargedSigmaRecoCheat::MakeHitCollections(std::vector<std::vector<art::Ptr<
 
   if(sigma_trkid == 0 || pion_trkid == 0) return;
 
+  std::vector<unsigned int> ids = {sigma_trkid,pion_trkid}; 
+
   r_hits.resize(2);
   r_hitspacepointmap.resize(2);
   r_vertex.resize(2,pandora::CartesianVector(-1000,-1000,-1000)); 
 
-  GetTruthMatchedHits(sigma_trkid,r_hits.at(0),r_hitspacepointmap.at(0));
-  if(r_hits.at(0).size()){ 
-    art::Ptr<recob::SpacePoint> point = r_hitspacepointmap.at(0).begin()->second;
-    r_vertex.at(0) = pandora::CartesianVector(point->XYZ()[0],point->XYZ()[1],point->XYZ()[2]);
-  }
+  for(size_t i_p=0;i_p<ids.size();i_p++){
 
-  GetTruthMatchedHits(pion_trkid,r_hits.at(1),r_hitspacepointmap.at(1));
-  if(r_hits.at(1).size()){ 
-    art::Ptr<recob::SpacePoint> point = r_hitspacepointmap.at(1).begin()->second;
-    r_vertex.at(1) = pandora::CartesianVector(point->XYZ()[0],point->XYZ()[1],point->XYZ()[2]);
+    art::Ptr<simb::MCParticle> part = partByID.at(ids.at(i_p));
+
+    switch (Alg){
+      case 1: GetTruthMatchedHits(ids.at(i_p),r_hits.at(i_p),r_hitspacepointmap.at(i_p)); break;
+      case 2: GetTruthMatchedHits2(ids.at(i_p),r_hits.at(i_p),r_hitspacepointmap.at(i_p)); break;
+      case 3: GetTruthMatchedHits3(ids.at(i_p),r_hits.at(i_p),r_hitspacepointmap.at(i_p)); break;
+    }
+
+    geo::Point_t point = {part->Vx(),part->Vy(),part->Vz()};
+    geo::Vector_t sce_corr = SCE->GetPosOffsets(point);
+    r_vertex.at(i_p) = pandora::CartesianVector(point.X()-sce_corr.X()+1.76,point.Y()+sce_corr.Y(),point.Z()+sce_corr.Z()+0.1);
+
   }
 
   std::cout << "Hits found: " << r_hits.at(0).size() << " " << r_hits.at(1).size() << std::endl;
