@@ -55,6 +55,7 @@ art_make(
       ${ROOT_BASIC_LIB_LIST}
       uboonecode_uboone_EventConnectedness
       ${ROOT_TMVA}
+      uboonecode_uboone_FlexiPID_Alg 
 
       DICT_LIBRARIES
       ${ROOT_BASIC_LIB_LIST}

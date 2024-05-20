@@ -1,5 +1,5 @@
-#ifndef RecoVariables_cxx_
-#define _RecoVariables_cxx_
+#ifndef _SubModuleReco_cxx_
+#define _SubModuleReco_cxx_
 
 #include "SubModuleReco.h"
 

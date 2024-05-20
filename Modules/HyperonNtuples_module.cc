@@ -47,6 +47,7 @@
 #include "ubana/HyperonProduction/Modules/SubModules/SubModuleGeneratorTruth.h"
 #include "ubana/HyperonProduction/Modules/SubModules/SubModuleG4Truth.h"
 #include "ubana/HyperonProduction/Modules/SubModules/SubModuleReco.h"
+#include "ubana/HyperonProduction/Modules/SubModules/SubModuleRecoRepass.h"
 
 namespace hyperon {
    class HyperonNtuples;
@@ -205,12 +206,13 @@ class hyperon::HyperonNtuples : public art::EDAnalyzer {
       bool f_GetGeneratorInfo;
       bool f_GetG4Info;
       bool f_GetRecoInfo;
+      bool f_GetRecoRepassInfo;
       bool f_GetConnInfo;
 
       fhicl::ParameterSet f_Generator;
       fhicl::ParameterSet f_G4;
       fhicl::ParameterSet f_Reco;
-      std::vector<fhicl::ParameterSet> f_RecoRepass;
+      fhicl::ParameterSet f_RecoRepass;
       std::string f_WireLabel;
       std::vector<art::InputTag> f_WeightLabels;
       std::string f_POTSummaryLabel;
@@ -235,11 +237,12 @@ hyperon::HyperonNtuples::HyperonNtuples(fhicl::ParameterSet const& p)
    f_GetGeneratorInfo(p.get<bool>("GetGeneratorInfo",true)),   
    f_GetG4Info(p.get<bool>("GetG4Info",true)),   
    f_GetRecoInfo(p.get<bool>("GetRecoInfo",true)),   
+   f_GetRecoRepassInfo(p.get<bool>("GetRecoRepassInfo",false)),   
    f_GetConnInfo(p.get<bool>("GetConnInfo",true)),   
    f_Generator(p.get<fhicl::ParameterSet>("Generator")),
    f_G4(p.get<fhicl::ParameterSet>("Geant4")),
    f_Reco(p.get<fhicl::ParameterSet>("Reco")),
-   f_RecoRepass(p.get<std::vector<fhicl::ParameterSet>>("RecoRepass",{})),
+   f_RecoRepass(p.get<fhicl::ParameterSet>("RecoRepass")),
    f_WireLabel(p.get<std::string>("WireLabel")),
    f_WeightLabels(p.get<std::vector<art::InputTag>>("WeightCalculators",{})),
    f_POTSummaryLabel(p.get<std::string>("POTSummaryLabel")),
@@ -473,23 +476,15 @@ void hyperon::HyperonNtuples::analyze(art::Event const& e)
 
       delete Reco_SM;
 
-      /*
-      // If configured to get repass of reconstruction
-      if(f_RecoRepass.size()){
-        std::cout << "Getting repassed information" << std::endl;
-         for(size_t i_r=0;i_r<f_RecoRepass.size();i_r++){
-            SubModuleReco* Reco_SM_Repass = new SubModuleReco(e,f_IsData,f_RecoRepass.at(i_r));
-            Reco_SM_Repass->PrepareInfo();
-            //Reco_SM->SetIndices(t_IsSignal,t_IsSignalSigmaZero);
-            RecoData RecoD_Repass =  Reco_SM_Repass->GetInfo();   
-            t_RepassTrackPrimaryDaughters.insert(t_RepassTrackPrimaryDaughters.end(),RecoD_Repass.TrackPrimaryDaughters.begin(),RecoD_Repass.TrackPrimaryDaughters.end());
-            t_RepassShowerPrimaryDaughters.insert(t_RepassShowerPrimaryDaughters.end(),RecoD_Repass.ShowerPrimaryDaughters.begin(),RecoD_Repass.ShowerPrimaryDaughters.end());
-            delete Reco_SM_Repass;
-         }
-      }
-     */
+   }
 
-
+   if(f_GetRecoRepassInfo){
+     //std::cout << "Getting repassed information" << std::endl;
+     SubModuleRecoRepass* Reco_SM_Repass = new SubModuleRecoRepass(e,f_IsData,f_RecoRepass);
+     RecoRepassData RecoD_Repass =  Reco_SM_Repass->GetInfo();   
+     t_RepassTrackPrimaryDaughters = RecoD_Repass.TrackPrimaryDaughters;
+     //std::cout << "Got " << t_RepassTrackPrimaryDaughters.size() << " tracks in repass" << std::endl;
+     delete Reco_SM_Repass;
    }
 
 

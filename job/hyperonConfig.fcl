@@ -1,4 +1,7 @@
+#include "FlexiPIDConfig.fcl"
+
 BEGIN_PROLOG
+
 
 analyseEvents:
 
@@ -10,7 +13,7 @@ IsData: false
 GetGeneratorInfo: true
 GetG4Info: true
 GetRecoInfo: true
-
+GetRecoRepassInfo: false
 
 # GeneratorTruth submodule config
 Generator: {
@@ -43,13 +46,15 @@ Reco: {
   ShowerHitAssnLabel: "pandora"
   HitTruthAssnLabel: "gaushitTruthMatch"
   PIDSettings: {
-    PIDReferenceHists: "${UBANA_DIR}/HyperonProduction/Data/dEdx_Reference.root"
+       FlexiPID: @local::FlexiPID
   }
 }
 
 # Connectedness test config
 WireLabel: "butcher"
 DrawConnectedness: false
+
+RecoRepass: {}
 
 #WeightCalculators: ["eventweight::EventWeightSept24",
 #                    "eventweight::EventWeightSept24ExtraGENIE1",

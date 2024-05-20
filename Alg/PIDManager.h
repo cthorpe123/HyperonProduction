@@ -15,6 +15,8 @@
 #include "ubana/HyperonProduction/Headers/LLR_PID_K.h"
 #include "ubana/HyperonProduction/Headers/LLRPID_kaon_proton_lookup.h"
 #include "ubana/HyperonProduction/Headers/LLRPID_correction_lookup.h"
+#include "ubana/FlexiPID/Alg/PIDCalc.h"
+
 #include "TVector3.h"
 #include <TH3.h>
 #include <TFile.h>
@@ -99,14 +101,8 @@ namespace hyperon {
          // Miniumum value of sin2(angle between track and wires)
          double TophatThresh = 0.175;
          double ResRangeCutoff=5; 
-
-         const std::string PIDReferenceHists;
-         const std::vector<int> pdg_v = {3222,3112,321,2212,13,211};
-         std::vector<TH3D*> h_dEdx_Reference_Plane0;
-         std::vector<TH3D*> h_dEdx_Reference_Plane1;
-         std::vector<TH3D*> h_dEdx_Reference_Plane2;
-
-         void LoadGenericLLRPID();
+        
+         const FlexiPID::PIDCalc GenericPIDCalc;
 
    };
 }
