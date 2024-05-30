@@ -1,0 +1,153 @@
+#include "mchitmodules.fcl"
+#include "mctrutht0matching.fcl"
+#include "reco_uboone_data_mcc9_8_driver_common.fcl"
+#include "reco_uboone_mcc9_8_reducer_stage2.fcl"
+
+process_name: RebuildHitCollectionProducer
+
+services.DetectorClocksService.InheritClockConfig:  false
+services.TFileService.fileName: "reco_stage_2_hist.root"
+services.DetectorClocksService.InheritClockConfig:  false
+
+source:
+{
+    module_type:                RootInput
+    maxEvents:                 -1
+    saveMemoryObjectThreshold:  0
+}
+
+physics:
+{
+    producers:
+    {
+        pandoraRebuildTrackMCSMu:      @local::microboone_reco_data_producers.pandoraMCSMu
+	pandoraRebuildTrackTag:	       @local::microboone_reco_data_producers.pandoratag
+	pandoraRebuildTrackCalo:       @local::microboone_reco_data_producers.pandoracalo
+	pandoraRebuildTrackPid:	       @local::microboone_reco_data_producers.pandorapid
+	pandoraRebuildTrackCali:       @local::microboone_reco_data_producers.pandoracali
+	pandoraRebuildTrackCaliPid:    @local::microboone_reco_data_producers.pandoracalipid
+        pandoraRebuildTrackCaloSCE:    @local::microboone_reco_data_producers.pandoracaloSCE
+	pandoraRebuildTrackPidSCE:     @local::microboone_reco_data_producers.pandorapidSCE
+        pandoraRebuildTrackCaliSCE:    @local::microboone_reco_data_producers.pandoracaliSCE
+        pandoraRebuildTrackCaliPidSCE: @local::microboone_reco_data_producers.pandoracalipidSCE
+
+        HitCollectionProducer: {
+            module_type:    "HitCollectionProducer"
+            HitCollectionTool: {
+            HitCollectionToolType: "LambdaRecoCheat"
+            IsData: false
+            HitFraction: 0.01
+            G4ModuleLabel: "largeant"
+            HitModuleLabel: "gaushit"
+            HitTruthAssnLabel: "gaushitTruthMatch" 
+            HitSpacePointAssnLabel: "pandora"
+            HitTruthAssnLabel: "gaushitTruthMatch" 
+            ParticlePDG: 2212
+            TrueRecoTolerance: 2.0
+            Alg: 3
+          }
+        } 
+
+	@table::microboone_reco_data_producers
+    }
+
+    reco: [ HitCollectionProducer , pandoraRebuildTrackMCSMu, pandoraRebuildTrackTag, pandoraRebuildTrackCalo, pandoraRebuildTrackPid, pandoraRebuildTrackCali, pandoraRebuildTrackCaliPid, pandoraRebuildTrackCaloSCE, pandoraRebuildTrackPidSCE, pandoraRebuildTrackCaliSCE, pandoraRebuildTrackCaliPidSCE ]
+
+    trigger_paths: [ reco ]
+
+    stream1:       [ out1 ]
+    end_paths: [ stream1 ]
+}
+
+
+physics.producers.pandoraRebuildTrackMCSMu.inputs.inputLabel:           	"HitCollectionProducer"
+
+physics.producers.pandoraRebuildTrackTag.TrackModuleLabel: 			"HitCollectionProducer"
+
+physics.producers.pandoraRebuildTrackCalo.TrackModuleLabel:			"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackCalo.SpacePointModuleLabel:	 	"pandora"
+#physics.producers.pandoraRebuildTrackCalo.SpacePointModuleLabel:	 	"HitCollectionProducer"
+
+physics.producers.pandoraRebuildTrackPid.ProducerLabels.TrackLabel: 	 	"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackPid.ProducerLabels.CalorimetryLabel:	"pandoraRebuildTrackCalo"
+
+physics.producers.pandoraRebuildTrackCali.TrackModuleLabel:			"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackCali.CalorimetryModuleLabel:		"pandoraRebuildTrackCalo"
+
+physics.producers.pandoraRebuildTrackCaliPid.ProducerLabels.TrackLabel:			"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackCaliPid.ProducerLabels.CalorimetryLabel: 		"pandoraRebuildTrackCali"
+
+physics.producers.pandoraRebuildTrackCaloSCE.TrackModuleLabel:          		"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackCaloSCE.SpacePointModuleLabel:     		"pandora"
+#physics.producers.pandoraRebuildTrackCaloSCE.SpacePointModuleLabel:     		"HitCollectionProducer"
+
+physics.producers.pandoraRebuildTrackPidSCE.ProducerLabels.TrackLabel:   		"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackPidSCE.ProducerLabels.CalorimetryLabel: 		"pandoraRebuildTrackCaloSCE"
+
+physics.producers.pandoraRebuildTrackCaliSCE.TrackModuleLabel:          		"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackCaliSCE.CalorimetryModuleLabel:    		"pandoraRebuildTrackCaloSCE"
+
+physics.producers.pandoraRebuildTrackCaliPidSCE.TrackModuleLabel:       		"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackCaliPidSCE.CalorimetryModuleLabel: 		"pandoraRebuildTrackCaliSCE"
+
+physics.producers.pandoraRebuildTrackCaliPidSCE.ProducerLabels.CaloTrackAssn:    	"pandoraRebuildTrackCaliSCE"
+physics.producers.pandoraRebuildTrackCaliPidSCE.ProducerLabels.CalorimetryLabel: 	"pandoraRebuildTrackCaliSCE"
+physics.producers.pandoraRebuildTrackCaliPidSCE.ProducerLabels.HitTrackAssn:     	"HitCollectionProducer"
+physics.producers.pandoraRebuildTrackCaliPidSCE.ProducerLabels.TrackLabel:       	"HitCollectionProducer"
+
+
+physics.producers.pandoraRebuildTrackCaloSCE.CaloAlg.CalAreaConstants:  [4.31e-3, 4.02e-3, 4.10e-3]
+physics.producers.pandoraRebuildTrackCaliSCE.CaloAlg.CalAreaConstants:  [4.31e-3, 4.02e-3, 4.10e-3]
+
+
+# Overwite PID file location to uboonedata for running on Argonne Machines
+physics.producers.pandoraRebuildTrackCaliPidSCE.BraggAlgo.LikelihoodMapsFile:          '${UBOONEDATA_DIR}/ParticleID/BraggLikelihoodMaps_mcc8_20190215.root'
+physics.producers.pandoraRebuildTrackPidSCE.BraggAlgo.LikelihoodMapsFile:              '${UBOONEDATA_DIR}/ParticleID/BraggLikelihoodMaps_mcc8_20190215.root'
+physics.producers.pandoraRebuildTrackCaliPid.BraggAlgo.LikelihoodMapsFile:             '${UBOONEDATA_DIR}/ParticleID/BraggLikelihoodMaps_mcc8_20190215.root'
+physics.producers.pandoraRebuildTrackPid.BraggAlgo.LikelihoodMapsFile:                 '${UBOONEDATA_DIR}/ParticleID/BraggLikelihoodMaps_mcc8_20190215.root'
+
+physics.producers.trajcluster.TrajClusterAlg.MatchTruth: [ -1, -1, -1, -1 ]
+physics.producers.trajcluster.DoRawDigitAssns: false
+
+physics.producers.trajclusterTruthMatch: @local::standard_mcparticlehitmatching
+physics.producers.trajclusterTruthMatch.OverrideRealData: true
+physics.producers.trajclusterTruthMatch.HitParticleAssociations:                    @local::IndirectHitParticleAssnsTool
+physics.producers.trajclusterTruthMatch.HitParticleAssociations.HitPartAssnsLabel:  "gaushitTruthMatch"
+physics.producers.trajclusterTruthMatch.HitParticleAssociations.HitModuleLabel:     "trajcluster"
+
+physics.producers.wcopflash.OpDataProducerBeam:                                     "mixer"
+
+outputs.out1.fileName:          "%ifb_%tc_reco2.root"
+outputs.out1.dataTier:          "reconstructed"
+outputs.out1.outputCommands:    @local::stage2ReducedOutputCommands
+source.inputCommands:           ["keep *_*_*_*"]
+
+microboone_tfile_metadata:
+{
+  JSONFileName:          ["reco_stage_2_hist.root.json", "Pandora_Events.pndr.json"]
+  GenerateTFileMetadata: [true, true]
+  dataTier:              ["root-tuple", "pandora_debug"]
+  fileFormat:            ["root", "pndr"]
+}
+
+
+# from reco_uboone_mcc9_8_driver_overlay_numi_stage2.fcl 
+
+# We use the beam off pandora slice vetos for overlay since everything is in EXT time
+physics.producers.pandora.SliceIdTool.BeamWindowStartTime: 6.00
+physics.producers.pandora.SliceIdTool.BeamWindowEndTime:   15.80
+
+# flash-matching score preservation module
+physics.producers.flashmatch.BeamWindowStart: 6.00
+physics.producers.flashmatch.BeamWindowEnd:   15.80
+
+# NuMI CRT Veto
+physics.filters.crtveto: @local::UBCRTCosmicFilterNuMIOFF
+physics.producers.pandora.SliceIdTool: @local::flash_neutrino_id_tool_overlay
+
+# flash-matching score preservation module
+physics.producers.flashmatch: @local::FlashMatch_overlay
+
+physics.filters.crtveto: @local::UBCRTCosmicFilterBNBOFF
+physics.producers.crthitcorrFirstPass.IsOverlay: true
+physics.producers.crthitcorr.CrtHitsIn_Label1: "crthitcorrFirstPass"
