@@ -2,68 +2,60 @@
 
 BEGIN_PROLOG
 
+analyseEvents: {
 
-analyseEvents:
+  module_type: HyperonNtuples
+  Debug: false
+  IsData: false
+  GetGeneratorInfo: true
+  GetG4Info: true
+  GetRecoInfo: true
+  GetRecoRepassInfo: false
 
-{
-
-module_type: HyperonNtuples
-Debug: false
-IsData: false
-GetGeneratorInfo: true
-GetG4Info: true
-GetRecoInfo: true
-GetRecoRepassInfo: false
-
-# GeneratorTruth submodule config
-Generator: {
-  GeneratorModuleLabel: "generator"
-}
-
-# G4Truth submodule config
-Geant4: {
-  GeneratorModuleLabel: "generator"
-  G4ModuleLabel: "largeant"
-  NeutronScatterProtonThresh: 0.400
-  NeutronScatterPionThresh: 0.100
-  DecayProtonThresh: 0.0
-  DecayPionThresh: 0.0
-}
-
-# Reco submodule config
-Reco: {
-  GeneratorModuleLabel: "generator"
-  G4ModuleLabel: "largeant"
-  PFParticleModuleLabel: "pandora"
-  TrackModuleLabel: "pandora"
-  VertexModuleLabel: "pandora"
-  ShowerModuleLabel: "pandora"
-  MetadataModuleLabel: "pandora" 
-  PIDModuleLabel: "pandorapid"
-  CaloModuleLabel: "pandoracali"
-  HitModuleLabel: "gaushit"
-  TrackHitAssnLabel: "pandora" 
-  ShowerHitAssnLabel: "pandora"
-  HitTruthAssnLabel: "gaushitTruthMatch"
-  PIDSettings: {
-       FlexiPID: @local::FlexiPID
+  # GeneratorTruth submodule config
+  Generator: {
+    GeneratorModuleLabel: "generator"
   }
-}
 
-# Connectedness test config
-WireLabel: "butcher"
-DrawConnectedness: false
+  # G4Truth submodule config
+  Geant4: {
+    GeneratorModuleLabel: "generator"
+    G4ModuleLabel: "largeant"
+    NeutronScatterProtonThresh: 0.400
+    NeutronScatterPionThresh: 0.100
+    DecayProtonThresh: 0.0
+    DecayPionThresh: 0.0
+  }
 
-RecoRepass: {}
+  # Reco submodule config
+  Reco: {
+    GeneratorModuleLabel: "generator"
+    G4ModuleLabel: "largeant"
+    PFParticleModuleLabel: "pandora"
+    TrackModuleLabel: "pandora"
+    VertexModuleLabel: "pandora"
+    ShowerModuleLabel: "pandora"
+    MetadataModuleLabel: "pandora" 
+    PIDModuleLabel: "pandorapid"
+    CaloModuleLabel: "pandoracali"
+    HitModuleLabel: "gaushit"
+    TrackHitAssnLabel: "pandora" 
+    ShowerHitAssnLabel: "pandora"
+    HitTruthAssnLabel: "gaushitTruthMatch"
+    PIDSettings: {
+         FlexiPID: @local::FlexiPID
+    }
+  }
 
-#WeightCalculators: ["eventweight::EventWeightSept24",
-#                    "eventweight::EventWeightSept24ExtraGENIE1",
-#                    "eventweight::EventWeightSept24ExtraGENIE2",
-#                    "eventweight::EventWeightSept24ExtraGENIE3",
-#                    "eventweight::EventWeightSept24ExtraGENIE4",
-#                    "eventweight::EventWeightSept24ExtraGENIE5"]
+  # Connectedness test config
+  WireLabel: "butcher"
+  DrawConnectedness: false
 
-POTSummaryLabel: "generator"
+  # Rerun reco config
+  RecoRepass: {}
+
+  # POT Config
+  POTSummaryLabel: "generator"
 
 }
 
