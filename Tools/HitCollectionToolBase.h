@@ -17,8 +17,11 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "ubana/KReco/TrackRebuilder/TrackRebuilder.h"
+//#include "ubana/KReco/TrackRebuilder/TrackRebuilder.h"
 #include "ubana/HyperonProduction/Headers/FV.h"
+#include "Objects/CartesianVector.h"
+
+
 
 // Base class for all hit manipulationtools
 
