@@ -1,0 +1,7 @@
+#include "services_microboone.fcl"
+#include "hyperonConfig.fcl"
+#include "run_HyperonFilter.fcl"
+
+process_name: StrangeParticleFilter
+
+physics.filters.HyperonFilter.module_type: StrangeParticleFilter

@@ -63,11 +63,12 @@ bool hyperon::StrangeParticleFilter::filter(art::Event& e)
 
       // Return true if event has a hyperon or kaon at a primary vertex inside the TPC
       bool pass = false;
-      for(size_t i_h=0;i_h<GenT.HasHyperon.size();i_h++) 
+      for(size_t i_h=0;i_h<GenT.HasHyperon.size();i_h++)
         if(GenT.HasHyperon.at(i_h) && GenT.InTPC.at(i_h)) pass = true;
-      for(size_t i_k=0;i_k<GenT.HasKaon.size();i_k++) 
+      
+      for(size_t i_k=0;i_k<GenT.HasKaon.size();i_k++)
         if(GenT.HasKaon.at(i_k) && GenT.InTPC.at(i_k)) pass = true;
-
+      
       delete Generator_SM;
   
       return pass;
