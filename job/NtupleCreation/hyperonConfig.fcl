@@ -42,9 +42,13 @@ Reco: {
   PIDModuleLabel: "pandorapid"
   CaloModuleLabel: "pandoracali"
   HitModuleLabel: "gaushit"
+  SpacePointModuleLabel: "pandora"
   TrackHitAssnLabel: "pandora" 
   ShowerHitAssnLabel: "pandora"
   HitTruthAssnLabel: "gaushitTruthMatch"
+  PFParticleSpacePointAssnLabel: "pandora"
+  SpacePointHitAssnLabel: "pandora"
+
   PIDSettings: {
        FlexiPID: @local::FlexiPID
   }

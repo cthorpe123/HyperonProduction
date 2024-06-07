@@ -1,0 +1,16 @@
+#include "hyperonConfig.fcl"
+#include "services_microboone.fcl"
+#include "run_HyperonSelection.fcl"
+
+process_name: SpacePointTreeGenerator 
+
+physics: {
+  analyzers: { 
+    spacepoints : @local::analyseEvents.Reco
+    ana: @local::analyseEvents
+  }
+  path0 : [ spacepoints , ana ] 
+  end_paths : [ path0 ] 
+}
+
+physics.analyzers.spacepoints.module_type: SpacePointTreeMaker

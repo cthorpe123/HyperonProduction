@@ -449,11 +449,20 @@ void hyperon::HyperonNtuples::analyze(art::Event const& e)
       t_RecoPrimaryVertex = RecoD.RecoPrimaryVertex;
       t_GoodReco = RecoD.GoodReco;
 
+      if(f_GetRecoRepassInfo){
+        SubModuleRecoRepass* Reco_SM_Repass = new SubModuleRecoRepass(e,f_IsData,f_RecoRepass);
+        RecoRepassData RecoD_Repass =  Reco_SM_Repass->GetInfo();   
+        t_RepassTrackPrimaryDaughters = RecoD_Repass.TrackPrimaryDaughters;
+        // Add the starts of these new tracks to the end of the track start vector 
+        // so we can use them in the CT test
+        RecoD.TrackStarts.insert(RecoD.TrackStarts.end(),RecoD_Repass.TrackStarts.begin(),RecoD_Repass.TrackStarts.end());
+        delete Reco_SM_Repass;
+      }
+
       // Results of connectedness test on different combinations of tracks
-
-      if(f_Debug) std::cout << "Performing Connectedness Tests" << std::endl;
-
       if(f_GetConnInfo){
+
+        if(f_Debug) std::cout << "Performing Connectedness Tests" << std::endl;
 
          CTOutcome ConnData = Conn_Helper.PrepareAndTestEvent(e,f_WireLabel,RecoD.TrackStarts);   
 
@@ -476,15 +485,6 @@ void hyperon::HyperonNtuples::analyze(art::Event const& e)
 
       delete Reco_SM;
 
-   }
-
-   if(f_GetRecoRepassInfo){
-     //std::cout << "Getting repassed information" << std::endl;
-     SubModuleRecoRepass* Reco_SM_Repass = new SubModuleRecoRepass(e,f_IsData,f_RecoRepass);
-     RecoRepassData RecoD_Repass =  Reco_SM_Repass->GetInfo();   
-     t_RepassTrackPrimaryDaughters = RecoD_Repass.TrackPrimaryDaughters;
-     //std::cout << "Got " << t_RepassTrackPrimaryDaughters.size() << " tracks in repass" << std::endl;
-     delete Reco_SM_Repass;
    }
 
 

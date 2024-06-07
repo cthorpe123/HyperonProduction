@@ -67,9 +67,10 @@ DoGetPIDs(dogetpids)
 
 RecoRepassData SubModuleRecoRepass::GetInfo(){
 
-
-   for(art::Ptr<recob::Track> trk : Vect_Track)
-        theData.TrackPrimaryDaughters.push_back(MakeRecoParticle(trk));
+  for(art::Ptr<recob::Track> trk : Vect_Track){
+    theData.TrackPrimaryDaughters.push_back(MakeRecoParticle(trk));
+    theData.TrackStarts.push_back(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z()));
+  }
 
    return theData;
 }
