@@ -235,11 +235,6 @@ void SubModuleReco::GetTrackData(const art::Ptr<recob::PFParticle> &pfp,RecoPart
 
    if(!IsData) TruthMatch(trk,P);
 
-   if(!IsData){
-     std::vector<std::pair<int,double>> pdgs = EnhancedTruthMatch(trk);
-     std::cout << pdgs.at(0).first << " " << pdgs.at(0).second << " " <<  pdgs.at(1).first << " " << pdgs.at(1).second << " " << pdgs.at(2).first << " " << pdgs.at(2).second << std::endl;
-   }
-
    if(DoGetPIDs) GetPIDs(trk,P);
    
    theData.TrackStarts.push_back(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z()));

@@ -308,10 +308,11 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
          neutrinoID = pfp->Self();
 
    // Collect start points of tracks
+   std::map<size_t,int> m_PFPID_TrackIndex;
    for(const art::Ptr<recob::PFParticle> &pfp : pfparticleVect){
 
-      // Only store information from particles in the hierarchy
-      if(pfp->Parent() != neutrinoID) continue;
+      // Only store information from particles in the hierarchy or children of particles in the hierarchy
+      if(pfp->Parent() != neutrinoID && m_PFPID_TrackIndex.find(pfp->Parent()) == m_PFPID_TrackIndex.end()) continue;
 
       std::vector<art::Ptr<recob::Track>> pfpTracks = trackAssoc.at(pfp.key());
 
@@ -327,6 +328,9 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
          TVector3 TrackEnd(trk->End().X(),trk->End().Y(),trk->End().Z());
          TVector3 TrackDir(trk->StartDirection().X(),trk->StartDirection().Y(),trk->StartDirection().Z());
          TVector3 TrackEndDir(trk->EndDirection().X(),trk->EndDirection().Y(),trk->EndDirection().Z());
+
+         // Keep record of which pfp ids are children of neutrino - use to get their respective children
+         if(pfp->Parent() == neutrinoID) m_PFPID_TrackIndex[pfp->Self()] = t_TrackDir_X.size(); 
 
          t_TrackStart_Channel_Plane0.push_back(U_wire(TrackStart)); 
          t_TrackStart_Time_Plane0.push_back(tick(TrackStart)); 
