@@ -121,25 +121,6 @@ class hyperon::WireTreeMaker : public art::EDAnalyzer {
       std::vector<double> t_TrackEndDir_Y;
       std::vector<double> t_TrackEndDir_Z;
 
-      // Calo Start (in xyz and tick/channel space)
-      std::vector<int> t_CaloStart_Channel_Plane0;
-      std::vector<int> t_CaloStart_Time_Plane0;
-      std::vector<double> t_CaloStart_X_Plane0;
-      std::vector<double> t_CaloStart_Y_Plane0;
-      std::vector<double> t_CaloStart_Z_Plane0;
-
-      std::vector<int> t_CaloStart_Channel_Plane1;
-      std::vector<int> t_CaloStart_Time_Plane1;
-      std::vector<double> t_CaloStart_X_Plane1;
-      std::vector<double> t_CaloStart_Y_Plane1;
-      std::vector<double> t_CaloStart_Z_Plane1;
-
-      std::vector<int> t_CaloStart_Channel_Plane2;
-      std::vector<int> t_CaloStart_Time_Plane2;
-      std::vector<double> t_CaloStart_X_Plane2;
-      std::vector<double> t_CaloStart_Y_Plane2;
-      std::vector<double> t_CaloStart_Z_Plane2;
-
       // Wire Signals
       std::vector<int> t_Wire_Channel_Plane0;
       std::vector<int> t_Wire_Tick_Plane0;
@@ -162,7 +143,6 @@ class hyperon::WireTreeMaker : public art::EDAnalyzer {
       // Producer module labels
       std::string fTrackLabel;
       std::string fPFParticleLabel;
-      std::string fCaloLabel;
       std::string fWireLabel;
 };
 
@@ -179,7 +159,6 @@ hyperon::WireTreeMaker::WireTreeMaker(fhicl::ParameterSet const& p)
    // Module labels
    fPFParticleLabel = p.get<std::string>("PFParticleLabel");
    fTrackLabel = p.get<std::string>("TrackLabel");
-   fCaloLabel = p.get<std::string>("CaloLabel");
    fWireLabel = p.get<std::string>("WireLabel");
 }
 
@@ -221,24 +200,6 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
    t_TrackEndDir_Y.clear();
    t_TrackEndDir_Z.clear();
 
-   t_CaloStart_Channel_Plane0.clear();
-   t_CaloStart_Time_Plane0.clear();
-   t_CaloStart_X_Plane0.clear();
-   t_CaloStart_Y_Plane0.clear();
-   t_CaloStart_Z_Plane0.clear();
-
-   t_CaloStart_Channel_Plane1.clear();
-   t_CaloStart_Time_Plane1.clear();
-   t_CaloStart_X_Plane1.clear();
-   t_CaloStart_Y_Plane1.clear();
-   t_CaloStart_Z_Plane1.clear();
-
-   t_CaloStart_Channel_Plane2.clear();
-   t_CaloStart_Time_Plane2.clear();
-   t_CaloStart_X_Plane2.clear();
-   t_CaloStart_Y_Plane2.clear();
-   t_CaloStart_Z_Plane2.clear();
-
    t_Wire_Channel_Plane0.clear();
    t_Wire_Tick_Plane0.clear();
    t_Wire_Signal_Plane0.clear();
@@ -269,11 +230,9 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
    // Setup handles
    art::Handle<std::vector<recob::PFParticle>> pfparticleHandle;
    art::Handle<std::vector<recob::Track>> trackHandle;
-   art::Handle<std::vector<anab::Calorimetry>> caloHandle;
 
    std::vector<art::Ptr<recob::Track>> trackVect;
    std::vector<art::Ptr<recob::PFParticle>> pfparticleVect;
-   std::vector<art::Ptr<anab::Calorimetry>> caloVect;
 
    // Fill PFP vector
    if(e.getByLabel(fPFParticleLabel,pfparticleHandle)){
@@ -286,7 +245,6 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
       return;
    }
 
-
    // Fill track vector
    if(e.getByLabel(fTrackLabel,trackHandle)) art::fill_ptr_vector(trackVect,trackHandle);
    else
@@ -296,9 +254,6 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
 
    // Tracks Assoc with PFPs
    art::FindManyP<recob::Track> trackAssoc(pfparticleVect,e,fTrackLabel);
-
-   // Calo Assoc to Tracks
-   art::FindManyP<anab::Calorimetry> caloTrackAssoc(trackVect,e,fCaloLabel);
 
    // Go through the list of pandora PFP's, find the reconstructed neutrino
    size_t neutrinoID = 99999;
@@ -318,9 +273,6 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
       if(pfpTracks.size() == 1){
 
          art::Ptr<recob::Track> trk = pfpTracks.at(0);
-
-         // Setup Calo Assn for next couple of steps	
-         std::vector<art::Ptr<anab::Calorimetry>> caloFromTrack = caloTrackAssoc.at(trk.key());
 
          // Get Track Start point
          TVector3 TrackStart(trk->Start().X(),trk->Start().Y(),trk->Start().Z());
@@ -356,67 +308,6 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
          t_TrackEndDir_X.push_back(TrackEndDir.X());
          t_TrackEndDir_Y.push_back(TrackEndDir.Y());
          t_TrackEndDir_Z.push_back(TrackEndDir.Z());
-
-         // Get Calo Start Point
-
-         int U = -1000;
-         int V = -1000;
-         int Y = -1000;
-         int tick_Plane0 = -1000;                                        
-         int tick_Plane1 = -1000;                                        
-         int tick_Plane2 = -1000;                                        
-
-         TVector3 CaloStart_Plane0(-1000,-1000,-1000);
-         TVector3 CaloStart_Plane1(-1000,-1000,-1000);
-         TVector3 CaloStart_Plane2(-1000,-1000,-1000);
-
-         for(size_t i_plane=0;i_plane<caloFromTrack.size();i_plane++){
-
-            auto thisPlaneCalo = caloFromTrack.at(i_plane);
-            int planeno = thisPlaneCalo->PlaneID().Plane;
-
-            // Get the last point in the calo object
-            if(thisPlaneCalo->XYZ().size()){
-
-               // Start of the track is the last point in the Calo point list
-               TVector3 CaloStart(thisPlaneCalo->XYZ().at(thisPlaneCalo->XYZ().size()-1).X(),thisPlaneCalo->XYZ().at(thisPlaneCalo->XYZ().size()-1).Y(),thisPlaneCalo->XYZ().at(thisPlaneCalo->XYZ().size()-1).Z());
-
-
-               if(planeno == 0){
-                  U = U_wire(CaloStart);
-                  tick_Plane0 = tick(CaloStart);
-                  CaloStart_Plane0 = CaloStart;
-               } 
-               if(planeno == 1){
-                  V = V_wire(CaloStart);
-                  tick_Plane1 = tick(CaloStart);
-                  CaloStart_Plane1 = CaloStart;
-               }
-               if(planeno == 2){
-                  Y = Y_wire(CaloStart);
-                  tick_Plane2 = tick(CaloStart);
-                  CaloStart_Plane2 = CaloStart;
-               } 
-            }
-         }              
-
-         t_CaloStart_Channel_Plane0.push_back(U);
-         t_CaloStart_Time_Plane0.push_back(tick_Plane0);
-         t_CaloStart_X_Plane0.push_back(CaloStart_Plane0.X());
-         t_CaloStart_Y_Plane0.push_back(CaloStart_Plane0.Y());
-         t_CaloStart_Z_Plane0.push_back(CaloStart_Plane0.Z());
-
-         t_CaloStart_Channel_Plane1.push_back(V);
-         t_CaloStart_Time_Plane1.push_back(tick_Plane1);
-         t_CaloStart_X_Plane1.push_back(CaloStart_Plane1.X());
-         t_CaloStart_Y_Plane1.push_back(CaloStart_Plane1.Y());
-         t_CaloStart_Z_Plane1.push_back(CaloStart_Plane1.Z());
-
-         t_CaloStart_Channel_Plane2.push_back(Y);
-         t_CaloStart_Time_Plane2.push_back(tick_Plane2);
-         t_CaloStart_X_Plane2.push_back(CaloStart_Plane2.X());
-         t_CaloStart_Y_Plane2.push_back(CaloStart_Plane2.Y());
-         t_CaloStart_Z_Plane2.push_back(CaloStart_Plane2.Z());
 
       } //pfpTracks.size() == 1 
 
@@ -539,24 +430,6 @@ void hyperon::WireTreeMaker::beginJob(){
    t_WireTree->Branch("TrackEndDir_X",&t_TrackEndDir_X);
    t_WireTree->Branch("TrackEndDir_Y",&t_TrackEndDir_Y);
    t_WireTree->Branch("TrackEndDir_Z",&t_TrackEndDir_Z);
-
-   t_WireTree->Branch("CaloStart_Channel_Plane0",&t_CaloStart_Channel_Plane0);
-   t_WireTree->Branch("CaloStart_Time_Plane0",&t_CaloStart_Time_Plane0);        
-   t_WireTree->Branch("CaloStart_X_Plane0",&t_CaloStart_X_Plane0);
-   t_WireTree->Branch("CaloStart_Y_Plane0",&t_CaloStart_Y_Plane0);
-   t_WireTree->Branch("CaloStart_Z_Plane0",&t_CaloStart_Z_Plane0);
-
-   t_WireTree->Branch("CaloStart_Channel_Plane1",&t_CaloStart_Channel_Plane1);
-   t_WireTree->Branch("CaloStart_Time_Plane1",&t_CaloStart_Time_Plane1);
-   t_WireTree->Branch("CaloStart_X_Plane1",&t_CaloStart_X_Plane1);
-   t_WireTree->Branch("CaloStart_Y_Plane1",&t_CaloStart_Y_Plane1);
-   t_WireTree->Branch("CaloStart_Z_Plane1",&t_CaloStart_Z_Plane1);
-
-   t_WireTree->Branch("CaloStart_Channel_Plane2",&t_CaloStart_Channel_Plane2);
-   t_WireTree->Branch("CaloStart_Time_Plane2",&t_CaloStart_Time_Plane2);
-   t_WireTree->Branch("CaloStart_X_Plane2",&t_CaloStart_X_Plane2);
-   t_WireTree->Branch("CaloStart_Y_Plane2",&t_CaloStart_Y_Plane2);
-   t_WireTree->Branch("CaloStart_Z_Plane2",&t_CaloStart_Z_Plane2);
 
    if(fDebug) std::cout << "Finished begin job" << std::endl;
 }
