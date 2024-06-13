@@ -34,18 +34,18 @@ physics:
         HitCollectionProducer: {
             module_type:    "HitCollectionProducer"
             HitCollectionTool: {
-            HitCollectionToolType: "LambdaRecoCheat"
-            IsData: false
-            HitFraction: 0.01
-            G4ModuleLabel: "largeant"
-            HitModuleLabel: "gaushit"
-            HitTruthAssnLabel: "gaushitTruthMatch" 
-            HitSpacePointAssnLabel: "pandora"
-            HitTruthAssnLabel: "gaushitTruthMatch" 
-            ParticlePDG: 2212
-            TrueRecoTolerance: 2.0
-            Alg: 3
-          }
+              HitCollectionToolType: "LambdaRecoCheat"
+              IsData: false
+              HitFraction: 0.01
+              G4ModuleLabel: "largeant"
+              HitModuleLabel: "gaushit"
+              HitTruthAssnLabel: "gaushitTruthMatch" 
+              HitSpacePointAssnLabel: "pandora"
+              HitTruthAssnLabel: "gaushitTruthMatch" 
+              ParticlePDG: 2212
+              TrueRecoTolerance: 2.0
+              Alg: 3
+           }
         } 
 
 	@table::microboone_reco_data_producers

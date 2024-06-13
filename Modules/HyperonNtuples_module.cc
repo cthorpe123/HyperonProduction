@@ -453,9 +453,14 @@ void hyperon::HyperonNtuples::analyze(art::Event const& e)
         SubModuleRecoRepass* Reco_SM_Repass = new SubModuleRecoRepass(e,f_IsData,f_RecoRepass);
         RecoRepassData RecoD_Repass =  Reco_SM_Repass->GetInfo();   
         t_RepassTrackPrimaryDaughters = RecoD_Repass.TrackPrimaryDaughters;
+
         // Add the starts of these new tracks to the end of the track start vector 
         // so we can use them in the CT test
-        RecoD.TrackStarts.insert(RecoD.TrackStarts.end(),RecoD_Repass.TrackStarts.begin(),RecoD_Repass.TrackStarts.end());
+        for(size_t i_tr=0;i_tr<t_RepassTrackPrimaryDaughters.size();i_tr++){
+          t_RepassTrackPrimaryDaughters.at(i_tr).Index = t_TrackPrimaryDaughters.size() + i_tr;
+          RecoD.TrackStarts.push_back(RecoD_Repass.TrackStarts.at(i_tr));
+        }
+
         delete Reco_SM_Repass;
       }
 
