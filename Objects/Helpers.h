@@ -5,6 +5,7 @@
 #include "ubana/HyperonProduction/Objects/SimParticle.h"
 #include "ubana/HyperonProduction/Objects/RecoParticle.h"
 #include "ubana/HyperonProduction/Headers/TrackWiggliness.h"
+#include "ubana/HyperonProduction/Alg/Position_To_Wire.h"
 
 //larsoft objects
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -58,6 +59,16 @@ inline void SetTrackVariables(RecoParticle &P , art::Ptr<recob::Track> trk){
    P.SetTrackPositions(Start,End);
 
    P.TrackWiggliness = GetTrackWiggliness(trk);
+
+   P.TrackStart_Channel_Plane0 = U_wire(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z())); 
+   P.TrackStart_Channel_Plane1 = V_wire(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z())); 
+   P.TrackStart_Channel_Plane2 = Y_wire(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z())); 
+   P.TrackStart_Time = tick(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z()));
+   P.TrackEnd_Channel_Plane0 = U_wire(TVector3(trk->End().X(),trk->End().Y(),trk->End().Z())); 
+   P.TrackEnd_Channel_Plane1 = V_wire(TVector3(trk->End().X(),trk->End().Y(),trk->End().Z())); 
+   P.TrackEnd_Channel_Plane2 = Y_wire(TVector3(trk->End().X(),trk->End().Y(),trk->End().Z())); 
+   P.TrackEnd_Time = tick(TVector3(trk->End().X(),trk->End().Y(),trk->End().Z()));
+
 }
 
 }

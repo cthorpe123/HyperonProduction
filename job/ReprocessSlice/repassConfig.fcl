@@ -1,0 +1,19 @@
+#include "FlexiPIDConfig.fcl"
+
+BEGIN_PROLOG
+
+HyperonRepass: {
+  GeneratorModuleLabel: "generator"
+  G4ModuleLabel: "largeant"
+  TrackModuleLabel: "HitCollectionProducer"
+  PIDModuleLabel: "pandoraRebuildTrackPid"
+  CaloModuleLabel: "pandoraRebuildTrackCali"
+  HitModuleLabel: "gaushit"
+  TrackHitAssnLabel: "HitCollectionProducer" 
+  HitTruthAssnLabel: "gaushitTruthMatch"
+  PIDSettings: {
+     FlexiPID: @local::FlexiPID
+  }
+}
+
+END_PROLOG

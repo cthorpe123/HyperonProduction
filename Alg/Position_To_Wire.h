@@ -17,16 +17,16 @@ const double C_t = 818.351;
 const double cos60 = 0.5;
 const double sin60 = sqrt(3)/2.0;
 
-int U_wire(TVector3 pos) { return A_w*(-sin60*pos.Y()+cos60*pos.Z())+C_U; }
-int V_wire(TVector3 pos) { return A_w*(sin60*pos.Y()+cos60*pos.Z())+C_V; }
-int Y_wire(TVector3 pos) { return A_w*pos.Z() + C_Y; }
-int tick(TVector3 pos) { return A_t*pos.X() + C_t; }
+inline int U_wire(TVector3 pos) { return A_w*(-sin60*pos.Y()+cos60*pos.Z())+C_U; }
+inline int V_wire(TVector3 pos) { return A_w*(sin60*pos.Y()+cos60*pos.Z())+C_V; }
+inline int Y_wire(TVector3 pos) { return A_w*pos.Z() + C_Y; }
+inline int tick(TVector3 pos) { return A_t*pos.X() + C_t; }
 
-double dUdt(TVector3 dir){ return A_w/A_t*(-sin60*dir.Y()/dir.X()+cos60*dir.Z()/dir.X()); }
-double dVdt(TVector3 dir){ return A_w/A_t*(sin60*dir.Y()/dir.X()+cos60*dir.Z()/dir.X()); }
-double dYdt(TVector3 dir){ return A_w/A_t*dir.Z()/dir.X(); }
+inline double dUdt(TVector3 dir){ return A_w/A_t*(-sin60*dir.Y()/dir.X()+cos60*dir.Z()/dir.X()); }
+inline double dVdt(TVector3 dir){ return A_w/A_t*(sin60*dir.Y()/dir.X()+cos60*dir.Z()/dir.X()); }
+inline double dYdt(TVector3 dir){ return A_w/A_t*dir.Z()/dir.X(); }
 
-double AngleU(TVector3 dir){
+inline double AngleU(TVector3 dir){
    bool invert = dir.X() < 0;
    double angle = (180/3.141)*atan(dUdt(dir));
    angle -= 2*(angle-45.0);
@@ -34,7 +34,7 @@ double AngleU(TVector3 dir){
    if(invert && angle > 0) angle -= 180;
    return angle;
 }
-double AngleV(TVector3 dir){
+inline double AngleV(TVector3 dir){
    bool invert = dir.X() < 0;
    double angle = (180/3.141)*atan(dVdt(dir));
    angle -= 2*(angle-45.0);
@@ -42,7 +42,7 @@ double AngleV(TVector3 dir){
    if(invert && angle > 0) angle -= 180;
    return angle;
 }
-double AngleY(TVector3 dir){
+inline double AngleY(TVector3 dir){
    bool invert = dir.X() < 0;
    double angle = (180/3.141)*atan(dYdt(dir));
    angle -= 2*(angle-45.0);

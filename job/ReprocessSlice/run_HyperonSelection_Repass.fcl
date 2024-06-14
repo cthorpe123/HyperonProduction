@@ -1,18 +1,7 @@
 #include "hyperonConfig.fcl"
 #include "services_microboone.fcl"
 #include "run_HyperonSelection.fcl"
+#include "repassConfig.fcl"
 
 physics.analyzers.ana.GetRecoRepassInfo: true
-physics.analyzers.ana.RecoRepass: {
-  GeneratorModuleLabel: "generator"
-  G4ModuleLabel: "largeant"
-  TrackModuleLabel: "HitCollectionProducer"
-  PIDModuleLabel: "pandoraRebuildTrackPid"
-  CaloModuleLabel: "pandoraRebuildTrackCali"
-  HitModuleLabel: "gaushit"
-  TrackHitAssnLabel: "HitCollectionProducer" 
-  HitTruthAssnLabel: "gaushitTruthMatch"
-  PIDSettings: {
-     FlexiPID: @local::FlexiPID
-  }
-}
+physics.analyzers.ana.RecoRepass: @local::HyperonRepass 

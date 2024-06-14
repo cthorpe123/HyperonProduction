@@ -50,6 +50,16 @@ double Track_LLR_PID_SigmaKaon,Track_LLR_PID_SigmaProton,Track_LLR_PID_SigmaMuon
 // Track Momentum estimators
 double ProtonMomentum,MuonMomentum,KaonMomentum; // Track kinematics
 
+// Connectedness input
+double TrackStart_Channel_Plane0;
+double TrackStart_Channel_Plane1;
+double TrackStart_Channel_Plane2;
+double TrackStart_Time; 
+double TrackEnd_Channel_Plane0;
+double TrackEnd_Channel_Plane1;
+double TrackEnd_Channel_Plane2;
+double TrackEnd_Time; 
+
 // Misc track variables
 double TrackWiggliness;
 
