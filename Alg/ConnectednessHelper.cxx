@@ -38,7 +38,7 @@ void ConnectednessHelper::LoadWireActivity(std::vector<art::Ptr<recob::Wire>> wi
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ConnectednessHelper::AddStartPositions(std::vector<TVector3> positions){
+void ConnectednessHelper::AddStartPositions(std::vector<TVector3> positions,std::vector<int> indexes){
 
    Positions_3D.clear();
    Positions_Plane0.clear();
@@ -46,9 +46,9 @@ void ConnectednessHelper::AddStartPositions(std::vector<TVector3> positions){
    Positions_Plane2.clear();
 
    Positions_3D = positions;
+   Indexes = indexes;
 
    for(size_t i=0;i<Positions_3D.size();i++){
-
       Positions_Plane0.push_back(std::make_pair(U_wire(Positions_3D.at(i)),tick(Positions_3D.at(i))));
       Positions_Plane1.push_back(std::make_pair(V_wire(Positions_3D.at(i)),tick(Positions_3D.at(i))));
       Positions_Plane2.push_back(std::make_pair(Y_wire(Positions_3D.at(i)),tick(Positions_3D.at(i))));
@@ -60,7 +60,6 @@ void ConnectednessHelper::AddStartPositions(std::vector<TVector3> positions){
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::vector<CTSingleOutcome> ConnectednessHelper::RunClustering(std::vector<int> indexes){
-
 
    // Setup the output structs   
 
@@ -80,6 +79,7 @@ std::vector<CTSingleOutcome> ConnectednessHelper::RunClustering(std::vector<int>
 
       int index = indexes.at(i);
 
+      /*
       Outcome_Plane0.SeedChannels.push_back(Positions_Plane0.at(index).first);
       Outcome_Plane0.SeedTicks.push_back(Positions_Plane0.at(index).second);
 
@@ -88,6 +88,19 @@ std::vector<CTSingleOutcome> ConnectednessHelper::RunClustering(std::vector<int>
 
       Outcome_Plane2.SeedChannels.push_back(Positions_Plane2.at(index).first);
       Outcome_Plane2.SeedTicks.push_back(Positions_Plane2.at(index).second);
+      */
+
+      // Find which tracks the indexes correspond to
+      for(size_t i_tr=0;i_tr<Indexes.size();i_tr++){
+        if(Indexes.at(i_tr) == index){
+          Outcome_Plane0.SeedChannels.push_back(Positions_Plane0.at(i_tr).first);
+          Outcome_Plane0.SeedTicks.push_back(Positions_Plane0.at(i_tr).second);
+          Outcome_Plane1.SeedChannels.push_back(Positions_Plane1.at(i_tr).first);
+          Outcome_Plane1.SeedTicks.push_back(Positions_Plane1.at(i_tr).second);
+          Outcome_Plane2.SeedChannels.push_back(Positions_Plane2.at(i_tr).first);
+          Outcome_Plane2.SeedTicks.push_back(Positions_Plane2.at(i_tr).second);
+        }
+      }
 
    }
 
@@ -98,18 +111,21 @@ std::vector<CTSingleOutcome> ConnectednessHelper::RunClustering(std::vector<int>
    std::string label_Plane0 = rse + "_Plane0_";
 
    for(size_t i=0;i<indexes.size();i++){
-      int index = indexes.at(i);
+     int index = indexes.at(i);
 
-      std::pair<int,int> id_and_size =  C_Plane0.MakeCluster(Positions_Plane0.at(index).first,Positions_Plane0.at(index).second,index);
+     for(size_t i_tr=0;i_tr<Indexes.size();i_tr++){
+       if(Indexes.at(i_tr) == index){
 
-      if(i < indexes.size()-1) label_Plane0 += std::to_string(indexes.at(i)) + "_";
-      else label_Plane0 += std::to_string(indexes.at(i));
+         std::pair<int,int> id_and_size =  C_Plane0.MakeCluster(Positions_Plane0.at(i_tr).first,Positions_Plane0.at(i_tr).second,index);
 
-      Outcome_Plane0.OutputIndexes.push_back(id_and_size.first);
-      Outcome_Plane0.OutputSizes.push_back(id_and_size.second);
+         if(i < indexes.size()-1) label_Plane0 += std::to_string(Indexes.at(i_tr)) + "_";
+         else label_Plane0 += std::to_string(Indexes.at(i_tr));
 
+         Outcome_Plane0.OutputIndexes.push_back(id_and_size.first);
+         Outcome_Plane0.OutputSizes.push_back(id_and_size.second);
+       }
+     }
    }
-
 
    if(Draw) C_Plane0.DrawClustered(label_Plane0,0,-1);
 
@@ -120,16 +136,20 @@ std::vector<CTSingleOutcome> ConnectednessHelper::RunClustering(std::vector<int>
    std::string label_Plane1 = rse + "_Plane1_";
 
    for(size_t i=0;i<indexes.size();i++){
-      int index = indexes.at(i);
+     int index = indexes.at(i);
 
-      std::pair<int,int> id_and_size =  C_Plane1.MakeCluster(Positions_Plane1.at(index).first,Positions_Plane1.at(index).second,index);
+     for(size_t i_tr=0;i_tr<Indexes.size();i_tr++){
+       if(Indexes.at(i_tr) == index){
 
-      if(i < indexes.size()-1) label_Plane1 += std::to_string(indexes.at(i)) + "_";
-      else label_Plane1 += std::to_string(indexes.at(i));
+         std::pair<int,int> id_and_size =  C_Plane1.MakeCluster(Positions_Plane1.at(i_tr).first,Positions_Plane1.at(i_tr).second,index);
 
-      Outcome_Plane1.OutputIndexes.push_back(id_and_size.first);
-      Outcome_Plane1.OutputSizes.push_back(id_and_size.second);
+         if(i < indexes.size()-1) label_Plane1 += std::to_string(Indexes.at(i_tr)) + "_";
+         else label_Plane1 += std::to_string(Indexes.at(i_tr));
 
+         Outcome_Plane1.OutputIndexes.push_back(id_and_size.first);
+         Outcome_Plane1.OutputSizes.push_back(id_and_size.second);
+       }
+     }
    }
 
    if(Draw) C_Plane1.DrawClustered(label_Plane1,1,-1);
@@ -141,16 +161,20 @@ std::vector<CTSingleOutcome> ConnectednessHelper::RunClustering(std::vector<int>
    std::string label_Plane2 = rse + "_Plane2_";
 
    for(size_t i=0;i<indexes.size();i++){
-      int index = indexes.at(i);
+     int index = indexes.at(i);
 
-      std::pair<int,int> id_and_size =  C_Plane2.MakeCluster(Positions_Plane2.at(index).first,Positions_Plane2.at(index).second,index);
+     for(size_t i_tr=0;i_tr<Indexes.size();i_tr++){
+       if(Indexes.at(i_tr) == index){
 
-      if(i < indexes.size()-1) label_Plane2 += std::to_string(indexes.at(i)) + "_";
-      else label_Plane2 += std::to_string(indexes.at(i));
+         std::pair<int,int> id_and_size =  C_Plane2.MakeCluster(Positions_Plane2.at(i_tr).first,Positions_Plane2.at(i_tr).second,index);
 
-      Outcome_Plane2.OutputIndexes.push_back(id_and_size.first);
-      Outcome_Plane2.OutputSizes.push_back(id_and_size.second);
+         if(i < indexes.size()-1) label_Plane2 += std::to_string(Indexes.at(i_tr)) + "_";
+         else label_Plane2 += std::to_string(Indexes.at(i_tr));
 
+         Outcome_Plane2.OutputIndexes.push_back(id_and_size.first);
+         Outcome_Plane2.OutputSizes.push_back(id_and_size.second);
+       }
+     }
    }
 
    if(Draw) C_Plane2.DrawClustered(label_Plane2,2,-1);
@@ -168,17 +192,23 @@ std::vector<CTSingleOutcome> ConnectednessHelper::RunTest(){
    std::vector<CTSingleOutcome> AllOutcomes;
 
    // Need at least three tracks for the test
-   if(Positions_3D.size() < 3) return AllOutcomes;
+   if(Positions_3D.size() < 3)
+     throw cet::exception("ConnectednessHelper") << "Indexes.size != Positions_3D.size" << std::endl;
 
    // Try all 3 track combinations possible and record outcomes
-
    int nseeds = static_cast<int>(Positions_3D.size());
+
+   if(Indexes.size() != Positions_3D.size())
+     throw cet::exception("ConnectednessHelper") << "Indexes.size != Positions_3D.size" << std::endl;
 
    for(int i=0;i<nseeds;i++){
       for(int j=i+1;j<nseeds;j++){
          for(int k=j+1;k<nseeds;k++){
-            //std::cout << "Running clustering on combination " << i << j << k << std::endl;
-            std::vector<CTSingleOutcome> Outcomes = RunClustering({i,j,k});
+
+            std::vector<int> indexes_this_test = {Indexes.at(i),Indexes.at(j),Indexes.at(k)};
+
+            std::cout << "Running clustering on combination " << indexes_this_test.at(0) << " " << indexes_this_test.at(1) << " " << indexes_this_test.at(2) << std::endl;
+            std::vector<CTSingleOutcome> Outcomes = RunClustering(indexes_this_test);
 
             AllOutcomes.push_back(Outcomes.at(0));
             AllOutcomes.push_back(Outcomes.at(1));
@@ -193,13 +223,29 @@ std::vector<CTSingleOutcome> ConnectednessHelper::RunTest(){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CTOutcome ConnectednessHelper::PrepareAndTestEvent(art::Event const& e,std::string wirelabel,std::vector<TVector3> trackstarts){
+CTOutcome ConnectednessHelper::PrepareAndTestEvent(art::Event const& e,std::string wirelabel,std::vector<RecoParticle> recoparticles) {
+
+  std::vector<TVector3> trackstarts;
+  std::vector<int> trackindexes;
+  for(RecoParticle p : recoparticles){
+    trackstarts.push_back(TVector3(p.TrackStartX,p.TrackStartY,p.TrackStartZ));
+    trackindexes.push_back(p.Index);
+  }
+
+  return PrepareAndTestEvent(e,wirelabel,trackstarts,trackindexes);
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CTOutcome ConnectednessHelper::PrepareAndTestEvent(art::Event const& e,std::string wirelabel,std::vector<TVector3> trackstarts,std::vector<int> trackindexes){
  
    CTOutcome theOutcome;
+
+   if(trackstarts.size() < 3 || trackindexes.size() < 3) 
+      return theOutcome;
    
    rse = std::to_string(e.run()) + "_" + std::to_string(e.subRun()) + "_" + std::to_string(e.event());
-
-   if(trackstarts.size() < 3) return theOutcome;
 
    //std::cout << "Running CT Test on event with " << trackstarts.size() << " tracks" << std::endl;
 
@@ -214,7 +260,7 @@ CTOutcome ConnectednessHelper::PrepareAndTestEvent(art::Event const& e,std::stri
    //std::cout << "Loading wire activity" << std::endl;
    LoadWireActivity(Vect_Wire);
    //std::cout << "Adding track start positions" << std::endl;
-   AddStartPositions(trackstarts);
+   AddStartPositions(trackstarts,trackindexes);
 
    // Vector containing the result for each combintation of three tracks
    //std::cout << "Running test" << std::endl;

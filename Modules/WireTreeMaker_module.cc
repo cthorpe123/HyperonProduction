@@ -277,6 +277,7 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
   delete Reco_SM;
 
   if(f_GetRecoRepassInfo){
+
     SubModuleRecoRepass* Reco_SM_Repass = new SubModuleRecoRepass(e,f_IsData,f_RecoRepass);
     RecoRepassData RecoD_Repass =  Reco_SM_Repass->GetInfo();   
 
@@ -318,150 +319,62 @@ void hyperon::WireTreeMaker::analyze(art::Event const& e)
     delete Reco_SM_Repass;
   }
 
-  /*
+  /////////////////////////////
+  //   Obtain Wire Signals   //
+  /////////////////////////////
+
   // Setup handles
-  art::Handle<std::vector<recob::PFParticle>> pfparticleHandle;
-  art::Handle<std::vector<recob::Track>> trackHandle;
+  art::Handle<std::vector<recob::Wire>> wireHandle;
+  std::vector<art::Ptr<recob::Wire>> wireVect;
 
-  std::vector<art::Ptr<recob::Track>> trackVect;
-  std::vector<art::Ptr<recob::PFParticle>> pfparticleVect;
-
-  // Fill PFP vector
-  if(e.getByLabel(fPFParticleLabel,pfparticleHandle)){
-  art::fill_ptr_vector(pfparticleVect,pfparticleHandle);
-  }
-
-  // If PFP vector is empty, add blank entry to tree and go to next event
-  if(!pfparticleVect.size()) {
-  t_WireTree->Fill();
-  return;
-  }
-
-  // Fill track vector
-  if(e.getByLabel(fTrackLabel,trackHandle)) art::fill_ptr_vector(trackVect,trackHandle);
+  // Fill Wire vector
+  if(e.getByLabel(f_WireLabel,wireHandle)) art::fill_ptr_vector(wireVect,wireHandle);
   else
-  std::cout << "Track handle not setup" << std::endl;
+    std::cout << "Wire handle not setup" << std::endl;
 
-  // Setup Assns
+  // Iterate through all of the wires, record signal at every tick with nonzero signal
+  for(const art::Ptr<recob::Wire> &wire : wireVect){
 
-  // Tracks Assoc with PFPs
-  art::FindManyP<recob::Track> trackAssoc(pfparticleVect,e,fTrackLabel);
+    // Get regions of interest        
+    unsigned int NROI = wire->SignalROI().n_ranges();
+    for(size_t i_roi=0; i_roi<NROI; ++i_roi){
 
-  // Go through the list of pandora PFP's, find the reconstructed neutrino
-  size_t neutrinoID = 99999;
+      // Region of tick space with nonzero activity
+      recob::Wire::RegionsOfInterest_t::datarange_t const& range = wire->SignalROI().range(i_roi);
 
-  for(const art::Ptr<recob::PFParticle> &pfp : pfparticleVect)
-  if((pfp->IsPrimary() && (std::abs(pfp->PdgCode()) == 14 || std::abs(pfp->PdgCode()) == 12 )))
-  neutrinoID = pfp->Self();
+      // Iterate through the ticks in this ROI, record signal
+      unsigned int thisTick = range.begin_index();
 
-  // Collect start points of tracks
-  for(const art::Ptr<recob::PFParticle> &pfp : pfparticleVect){
+      while(thisTick < range.end_index()){
 
-// Only store information from particles in the hierarchy
-if(pfp->Parent() != neutrinoID) continue;
+        if(wire->View() == 0){
+          t_Wire_Channel_Plane0.push_back(wire->Channel());
+          t_Wire_Tick_Plane0.push_back(thisTick);
+          t_Wire_Signal_Plane0.push_back(wire->Signal().at(thisTick));
+        }
 
-std::vector<art::Ptr<recob::Track>> pfpTracks = trackAssoc.at(pfp.key());
+        if(wire->View() == 1){
+          t_Wire_Channel_Plane1.push_back(wire->Channel());
+          t_Wire_Tick_Plane1.push_back(thisTick);
+          t_Wire_Signal_Plane1.push_back(wire->Signal().at(thisTick));
+        }
 
-if(pfpTracks.size() == 1){
+        if(wire->View() == 2){
+          t_Wire_Channel_Plane2.push_back(wire->Channel());
+          t_Wire_Tick_Plane2.push_back(thisTick);
+          t_Wire_Signal_Plane2.push_back(wire->Signal().at(thisTick));
+        }
 
-art::Ptr<recob::Track> trk = pfpTracks.at(0);
+        thisTick++;
 
-// Get Track Start point
-TVector3 TrackStart(trk->Start().X(),trk->Start().Y(),trk->Start().Z());
-TVector3 TrackEnd(trk->End().X(),trk->End().Y(),trk->End().Z());
-TVector3 TrackDir(trk->StartDirection().X(),trk->StartDirection().Y(),trk->StartDirection().Z());
-TVector3 TrackEndDir(trk->EndDirection().X(),trk->EndDirection().Y(),trk->EndDirection().Z());
+      } // while(thisTick < range.end_index
 
-t_TrackStart_Channel_Plane0.push_back(U_wire(TrackStart)); 
-t_TrackStart_Time_Plane0.push_back(tick(TrackStart)); 
-t_TrackEnd_Channel_Plane0.push_back(U_wire(TrackEnd)); 
-t_TrackEnd_Time_Plane0.push_back(tick(TrackEnd)); 
+    } // loop over ROI
 
-t_TrackStart_Channel_Plane1.push_back(V_wire(TrackStart)); 
-t_TrackStart_Time_Plane1.push_back(tick(TrackStart)); 
-t_TrackEnd_Channel_Plane1.push_back(V_wire(TrackEnd)); 
-t_TrackEnd_Time_Plane1.push_back(tick(TrackEnd)); 
+  } // loop over wires
 
-t_TrackStart_Channel_Plane2.push_back(Y_wire(TrackStart)); 
-t_TrackStart_Time_Plane2.push_back(tick(TrackStart)); 
-t_TrackEnd_Channel_Plane2.push_back(Y_wire(TrackEnd)); 
-t_TrackEnd_Time_Plane2.push_back(tick(TrackEnd)); 
-
-t_TrackStart_X.push_back(TrackStart.X());
-t_TrackStart_Y.push_back(TrackStart.Y());
-t_TrackStart_Z.push_back(TrackStart.Z());
-t_TrackEnd_X.push_back(TrackEnd.X());
-t_TrackEnd_Y.push_back(TrackEnd.Y());
-t_TrackEnd_Z.push_back(TrackEnd.Z());
-
-t_TrackDir_X.push_back(TrackDir.X());
-t_TrackDir_Y.push_back(TrackDir.Y());
-t_TrackDir_Z.push_back(TrackDir.Z());
-t_TrackEndDir_X.push_back(TrackEndDir.X());
-t_TrackEndDir_Y.push_back(TrackEndDir.Y());
-t_TrackEndDir_Z.push_back(TrackEndDir.Z());
-
-} //pfpTracks.size() == 1 
-
-} //end of PFP loop
-*/
-
-/////////////////////////////
-//   Obtain Wire Signals   //
-/////////////////////////////
-
-// Setup handles
-art::Handle<std::vector<recob::Wire>> wireHandle;
-std::vector<art::Ptr<recob::Wire>> wireVect;
-
-// Fill Wire vector
-if(e.getByLabel(f_WireLabel,wireHandle)) art::fill_ptr_vector(wireVect,wireHandle);
-else
-std::cout << "Wire handle not setup" << std::endl;
-
-// Iterate through all of the wires, record signal at every tick with nonzero signal
-for(const art::Ptr<recob::Wire> &wire : wireVect){
-
-  // Get regions of interest        
-  unsigned int NROI = wire->SignalROI().n_ranges();
-  for(size_t i_roi=0; i_roi<NROI; ++i_roi){
-
-    // Region of tick space with nonzero activity
-    recob::Wire::RegionsOfInterest_t::datarange_t const& range = wire->SignalROI().range(i_roi);
-
-    // Iterate through the ticks in this ROI, record signal
-    unsigned int thisTick = range.begin_index();
-
-    while(thisTick < range.end_index()){
-
-      if(wire->View() == 0){
-        t_Wire_Channel_Plane0.push_back(wire->Channel());
-        t_Wire_Tick_Plane0.push_back(thisTick);
-        t_Wire_Signal_Plane0.push_back(wire->Signal().at(thisTick));
-      }
-
-      if(wire->View() == 1){
-        t_Wire_Channel_Plane1.push_back(wire->Channel());
-        t_Wire_Tick_Plane1.push_back(thisTick);
-        t_Wire_Signal_Plane1.push_back(wire->Signal().at(thisTick));
-      }
-
-      if(wire->View() == 2){
-        t_Wire_Channel_Plane2.push_back(wire->Channel());
-        t_Wire_Tick_Plane2.push_back(thisTick);
-        t_Wire_Signal_Plane2.push_back(wire->Signal().at(thisTick));
-      }
-
-      thisTick++;
-
-    } // while(thisTick < range.end_index
-
-  } // loop over ROI
-
-} // loop over wires
-
-// Fill tree! 
-t_WireTree->Fill();
+  // Fill tree! 
+  t_WireTree->Fill();
 }
 
 //////////////////////////////////////////////////////////////////

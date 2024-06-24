@@ -449,10 +449,14 @@ void hyperon::HyperonNtuples::analyze(art::Event const& e)
       t_RecoPrimaryVertex = RecoD.RecoPrimaryVertex;
       t_GoodReco = RecoD.GoodReco;
 
+      std::vector<RecoParticle> particles;
+      for(size_t i_tr=0;i_tr<RecoD.TrackPrimaryDaughters.size();i_tr++) particles.push_back(RecoD.TrackPrimaryDaughters.at(i_tr));
+
       if(f_GetRecoRepassInfo){
         SubModuleRecoRepass* Reco_SM_Repass = new SubModuleRecoRepass(e,f_IsData,f_RecoRepass);
         RecoRepassData RecoD_Repass =  Reco_SM_Repass->GetInfo();   
         t_RepassTrackPrimaryDaughters = RecoD_Repass.TrackPrimaryDaughters;
+        for(size_t i_tr=0;i_tr<RecoD_Repass.TrackPrimaryDaughters.size();i_tr++) particles.push_back(RecoD_Repass.TrackPrimaryDaughters.at(i_tr));
         delete Reco_SM_Repass;
       }
 
@@ -461,7 +465,8 @@ void hyperon::HyperonNtuples::analyze(art::Event const& e)
 
         if(f_Debug) std::cout << "Performing Connectedness Tests" << std::endl;
 
-         CTOutcome ConnData = Conn_Helper.PrepareAndTestEvent(e,f_WireLabel,RecoD.TrackStarts);   
+         //CTOutcome ConnData = Conn_Helper.PrepareAndTestEvent(e,f_WireLabel,RecoD.TrackStarts);   
+         CTOutcome ConnData = Conn_Helper.PrepareAndTestEvent(e,f_WireLabel,particles);   
 
          t_Conn_SeedIndexes_Plane0 = ConnData.SeedIndexes_Plane0;
          t_Conn_OutputIndexes_Plane0 = ConnData.OutputIndexes_Plane0;

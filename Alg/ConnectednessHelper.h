@@ -1,6 +1,7 @@
 #ifndef _ConnectednessHelper_h_
 #define _ConnectednessHelper_h_
 
+// art/larsoft includes
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -10,12 +11,14 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "cetlib_except/exception.h"
-
 #include "lardataobj/RecoBase/Wire.h"
 
+// local includes
+#include "ubana/HyperonProduction/Objects/RecoParticle.h"
 #include "ubana/HyperonProduction/Connectedness/Alg/ClusterBuilder.h"
 #include "Position_To_Wire.h"
 
+// root includes
 #include "TVector3.h"
 
 namespace hyperon {
@@ -123,13 +126,14 @@ class ConnectednessHelper {
 
       ConnectednessHelper(bool draw);
       void LoadWireActivity(std::vector<art::Ptr<recob::Wire>> wires);
-      void AddStartPositions(std::vector<TVector3> positions);
+      void AddStartPositions(std::vector<TVector3> positions,std::vector<int> indexes);
   
       std::vector<CTSingleOutcome> RunTest();
 
       std::vector<CTSingleOutcome> RunClustering(std::vector<int> indexes);        
 
-      CTOutcome PrepareAndTestEvent(art::Event const& e,std::string wirelabel,std::vector<TVector3> trackstarts);
+      CTOutcome PrepareAndTestEvent(art::Event const& e,std::string wirelabel,std::vector<TVector3> trackstarts,std::vector<int> trackindexes);
+      CTOutcome PrepareAndTestEvent(art::Event const& e,std::string wirelabel,std::vector<RecoParticle> recoparticles);
 
    private: 
      
@@ -143,6 +147,9 @@ class ConnectednessHelper {
       Wiremap WM_Plane0;
       Wiremap WM_Plane1;
       Wiremap WM_Plane2;
+
+      // Indexes of input tracks
+      std::vector<int> Indexes;
 
       // Starting positions of tracks in 3D (do not correct for SC)
       std::vector<TVector3> Positions_3D;   
