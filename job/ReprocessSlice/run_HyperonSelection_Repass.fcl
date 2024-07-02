@@ -1,7 +1,7 @@
 #include "hyperonConfig.fcl"
+#include "repassConfig.fcl"
 #include "services_microboone.fcl"
 #include "run_HyperonSelection.fcl"
-#include "repassConfig.fcl"
 
 physics.analyzers.ana.GetRecoRepassInfo: true
 physics.analyzers.ana.RecoRepass: @local::HyperonRepass 

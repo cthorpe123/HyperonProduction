@@ -2,7 +2,6 @@
 
 BEGIN_PROLOG
 
-
 analyseEvents:
 
 {
@@ -48,7 +47,6 @@ Reco: {
   HitTruthAssnLabel: "gaushitTruthMatch"
   PFParticleSpacePointAssnLabel: "pandora"
   SpacePointHitAssnLabel: "pandora"
-
   PIDSettings: {
        FlexiPID: @local::FlexiPID
   }
