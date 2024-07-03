@@ -38,6 +38,7 @@
 #include "ubana/HyperonProduction/Tools/LambdaRecoCheat.h"
 #include "ubana/HyperonProduction/Tools/LambdaRecoCheat2.h"
 #include "ubana/HyperonProduction/Tools/ChargedSigmaRecoCheat.h"
+#include "ubana/HyperonProduction/Tools/ShowerReanalyzer.h"
 
 #include <memory>
 
@@ -97,11 +98,13 @@ void hyperon::HitCollectionProducer::produce(art::Event& e)
      hitcollectiontool = std::make_unique<LambdaRecoCheat2>(f_HitCollectionTool); 
    else if(collectiontooltype == "ChargedSigmaRecoCheat")
      hitcollectiontool = std::make_unique<ChargedSigmaRecoCheat>(f_HitCollectionTool); 
-  
+   else if(collectiontooltype == "ShowerReanalyzer")
+     hitcollectiontool = std::make_unique<ShowerReanalyzer>(f_HitCollectionTool); 
+ 
    if(hitcollectiontool == nullptr)
      throw cet::exception("HitCollectionProducer") << "Not hit collection tool selected" << std::endl;
  
-  std::unique_ptr<std::vector<recob::Hit>> hitcol(new std::vector<recob::Hit>);
+   std::unique_ptr<std::vector<recob::Hit>> hitcol(new std::vector<recob::Hit>);
    std::unique_ptr<std::vector<recob::Track>> trackcol(new std::vector<recob::Track>);
    std::unique_ptr<art::Assns<recob::Track, recob::Hit>> anaTrackHitAssociations(new art::Assns<recob::Track, recob::Hit>);
 

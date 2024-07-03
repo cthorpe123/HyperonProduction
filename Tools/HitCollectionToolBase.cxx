@@ -9,14 +9,26 @@ using namespace hyperon;
 
 void HitCollectionToolBase::LoadEvent(art::Event const& e){
 
+  Vect_PFParticle.clear();  
   Vect_G4.clear();
   Vect_Hit.clear();  
+  Vect_Shower.clear();
+
+  if(!e.getByLabel(params.get<std::string>("PFParticleModuleLabel"),Handle_PFParticle)) 
+    throw cet::exception("HitCollectionToolBase") << "No PFParticle Data Products Found!" << std::endl;
+  art::fill_ptr_vector(Vect_PFParticle,Handle_PFParticle);
 
   if(!e.getByLabel(params.get<std::string>("HitModuleLabel"),Handle_Hit)) 
     throw cet::exception("HitCollectionToolBase") << "No Hit Data Products Found!" << std::endl;
   art::fill_ptr_vector(Vect_Hit,Handle_Hit);
 
+  if(!e.getByLabel(params.get<std::string>("ShowerModuleLabel"),Handle_Shower)) 
+    throw cet::exception("HitCollectionToolBase") << "No Shower Data Products Found!" << std::endl;
+  art::fill_ptr_vector(Vect_Shower,Handle_Shower);
+
+  Assoc_PFParticleShower = new art::FindManyP<recob::Shower>(Vect_PFParticle,e,params.get<std::string>("PFParticleShowerAssnLabel"));
   Assoc_HitSpacePoint = new art::FindManyP<recob::SpacePoint>(Vect_Hit,e,params.get<std::string>("HitSpacePointAssnLabel"));
+  Assoc_ShowerHit = new art::FindManyP<recob::Hit>(Vect_Shower,e,params.get<std::string>("ShowerHitAssnLabel"));
 
   for(const art::Ptr<recob::Hit>& hit : Vect_Hit){
     std::vector<art::Ptr<recob::SpacePoint>> spacepoints = Assoc_HitSpacePoint->at(hit.key());
@@ -24,7 +36,6 @@ void HitCollectionToolBase::LoadEvent(art::Event const& e){
     m_HitsSpacePoints[hit] = spacepoints.at(0); 
     m_SpacePointsHits[spacepoints.at(0)] = hit;
   }
-
 
   if(!IsData){
 
@@ -173,7 +184,7 @@ void HitCollectionToolBase::GetTruthMatchedHits3(const unsigned int& trackid,std
 
     geo::Point_t point = {sp.X(),sp.Y(),sp.Z()};
     if(std::isnan(point.X()) || std::isnan(point.Y()) || std::isnan(point.Z())) continue;
- 
+
     geo::Vector_t sce_corr = SCE->GetCalPosOffsets(point);
 
     // corrrect for spacecharge
@@ -212,6 +223,23 @@ void HitCollectionToolBase::GetTruthMatchedHits3(const unsigned int& trackid,std
     }
 
   } 
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+std::map<art::Ptr<recob::SpacePoint>,art::Ptr<recob::Hit>> HitCollectionToolBase::MakeSpacePointHitMap(const art::Ptr<recob::Shower> shower) const {
+
+  std::vector<art::Ptr<recob::Hit>> hits = Assoc_ShowerHit->at(shower.key());
+  std::map<art::Ptr<recob::SpacePoint>,art::Ptr<recob::Hit>> sp_hit_map;
+
+  for(const art::Ptr<recob::Hit>& hit : hits){
+    std::vector<art::Ptr<recob::SpacePoint>> spacepoints = Assoc_HitSpacePoint->at(hit.key());
+    if(spacepoints.size() != 1 || std::isnan(spacepoints.at(0)->XYZ()[0]) || std::isnan(spacepoints.at(0)->XYZ()[1]) || std::isnan(spacepoints.at(0)->XYZ()[2])) continue;
+    sp_hit_map[spacepoints.at(0)] = hit;
+  }
+
+  return sp_hit_map;
 
 }
 

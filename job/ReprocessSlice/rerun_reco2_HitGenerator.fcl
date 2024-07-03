@@ -39,6 +39,10 @@ physics:
               HitFraction: 0.01
               G4ModuleLabel: "largeant"
               HitModuleLabel: "gaushit"
+              PFParticleModuleLabel: "pandora"
+              PFParticleShowerAssnLabel: "pandora"
+              ShowerModuleLabel: "pandora"
+              ShowerHitAssnLabel: "pandora"
               HitTruthAssnLabel: "gaushitTruthMatch" 
               HitSpacePointAssnLabel: "pandora"
               HitTruthAssnLabel: "gaushitTruthMatch" 

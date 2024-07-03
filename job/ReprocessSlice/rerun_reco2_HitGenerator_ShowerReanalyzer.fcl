@@ -1,0 +1,3 @@
+#include "rerun_reco2_HitGenerator.fcl"
+
+physics.producers.HitCollectionProducer.HitCollectionTool.HitCollectionToolType: "ShowerReanalyzer" 

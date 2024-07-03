@@ -46,6 +46,8 @@ namespace hyperon {
       // Load a new event
       void LoadEvent(art::Event const& e);
 
+      std::map<art::Ptr<recob::SpacePoint>,art::Ptr<recob::Hit>> MakeSpacePointHitMap(const art::Ptr<recob::Shower> shower) const;
+
     protected:
 
       // Parameters 
@@ -58,12 +60,18 @@ namespace hyperon {
       const spacecharge::SpaceCharge* SCE;
 
       // Handles and vectors 
+      art::Handle<std::vector<recob::PFParticle>> Handle_PFParticle;
+      std::vector<art::Ptr<recob::PFParticle>> Vect_PFParticle;
       art::Handle<std::vector<simb::MCParticle>> Handle_G4;
       std::vector<art::Ptr<simb::MCParticle>> Vect_G4;
       art::Handle<std::vector<recob::Hit>> Handle_Hit;
       std::vector<art::Ptr<recob::Hit>> Vect_Hit;
+      art::Handle<std::vector<recob::Shower>> Handle_Shower;
+      std::vector<art::Ptr<recob::Shower>> Vect_Shower;
       art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>* ParticlesPerHit;
+      art::FindManyP<recob::Shower>* Assoc_PFParticleShower;
       art::FindManyP<recob::SpacePoint>* Assoc_HitSpacePoint;
+      art::FindManyP<recob::Hit>* Assoc_ShowerHit;
 
       // Maps between hits and spacepoints
       std::map<art::Ptr<recob::Hit>,art::Ptr<recob::SpacePoint>> m_HitsSpacePoints;
