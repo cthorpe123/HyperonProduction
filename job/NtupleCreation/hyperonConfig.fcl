@@ -45,6 +45,8 @@ Reco: {
   TrackHitAssnLabel: "pandora" 
   ShowerHitAssnLabel: "pandora"
   HitTruthAssnLabel: "gaushitTruthMatch"
+  PFParticleTrackAssnLabel: "pandora"
+  PFParticleShowerAssnLabel: "pandora"
   PFParticleSpacePointAssnLabel: "pandora"
   SpacePointHitAssnLabel: "pandora"
   PIDSettings: {

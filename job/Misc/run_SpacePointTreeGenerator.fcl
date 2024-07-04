@@ -14,3 +14,4 @@ physics: {
 }
 
 physics.analyzers.spacepoints.module_type: SpacePointTreeMaker
+services.TFileService.fileName: "SpacePointTrees.root"
