@@ -30,6 +30,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -46,7 +47,9 @@
 
 // local includes
 #include "ubana/HyperonProduction/Headers/ParticleTypes.h"
+#include "ubana/HyperonProduction/Headers/FV.h"
 #include "ubana/HyperonProduction/Alg/Position_To_Wire.h"
+
 
 // Root includes
 #include "TTree.h"
@@ -85,7 +88,12 @@ class hyperon::SpacePointTreeMaker : public art::EDAnalyzer {
 
   private:
 
+    std::map<art::Ptr<recob::Hit>,art::Ptr<recob::SpacePoint>> HitSpacePointMap;
+    std::map<art::Ptr<recob::SpacePoint>,art::Ptr<recob::Hit>> SpacePointHitMap;
+    std::pair<int,double> TruthMatchHit(art::Ptr<recob::Hit> hit,const art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particlesperhit);
+
     TTree *t_SpacePointTree;
+    TTree *t_SpacePointTree_NeutrinoSlice;
     TTree *t_SpacePointTree_Tracks;
     TTree *t_SpacePointTree_Showers;
 
@@ -103,6 +111,15 @@ class hyperon::SpacePointTreeMaker : public art::EDAnalyzer {
     std::vector<std::vector<std::vector<double>>> t_PFPHit_Tick;
     std::vector<std::vector<std::vector<double>>> t_PFPHit_Width;
 
+    std::vector<std::vector<double>> t_PFPSpacePoint_X_NeutrinoSlice;
+    std::vector<std::vector<double>> t_PFPSpacePoint_Y_NeutrinoSlice;
+    std::vector<std::vector<double>> t_PFPSpacePoint_Z_NeutrinoSlice;
+    std::vector<std::vector<int>> t_PFPSpacePoint_PDG_NeutrinoSlice;
+    std::vector<std::vector<double>> t_PFPSpacePoint_PDGPur_NeutrinoSlice;
+    std::vector<std::vector<std::vector<double>>> t_PFPHit_Channel_NeutrinoSlice;
+    std::vector<std::vector<std::vector<double>>> t_PFPHit_Tick_NeutrinoSlice;
+    std::vector<std::vector<std::vector<double>>> t_PFPHit_Width_NeutrinoSlice;
+
     std::vector<std::vector<double>> t_PFPSpacePoint_X_Tracks;
     std::vector<std::vector<double>> t_PFPSpacePoint_Y_Tracks;
     std::vector<std::vector<double>> t_PFPSpacePoint_Z_Tracks;
@@ -111,7 +128,7 @@ class hyperon::SpacePointTreeMaker : public art::EDAnalyzer {
     std::vector<std::vector<std::vector<double>>> t_PFPHit_Channel_Tracks;
     std::vector<std::vector<std::vector<double>>> t_PFPHit_Tick_Tracks;
     std::vector<std::vector<std::vector<double>>> t_PFPHit_Width_Tracks;
-    
+
     std::vector<std::vector<double>> t_PFPSpacePoint_X_Showers;
     std::vector<std::vector<double>> t_PFPSpacePoint_Y_Showers;
     std::vector<std::vector<double>> t_PFPSpacePoint_Z_Showers;
@@ -136,7 +153,10 @@ class hyperon::SpacePointTreeMaker : public art::EDAnalyzer {
     const std::string fPFParticleSpacePointAssnLabel;
     const std::string fSpacePointHitAssnLabel;
     const std::string fHitTruthAssnLabel;
-    //const std::string fTrackModuleLabel;
+    const std::string fSliceModuleLabel;
+    const std::string fPFParticleSliceAssnLabel;
+    const std::string fSliceHitAssnLabel;
+
 };
 
 ////////////////////////////////////////////////////
@@ -152,7 +172,10 @@ hyperon::SpacePointTreeMaker::SpacePointTreeMaker(fhicl::ParameterSet const& p)
   fPFParticleShowerAssnLabel(p.get<std::string>("PFParticleShowerAssnLabel")),
   fPFParticleSpacePointAssnLabel(p.get<std::string>("PFParticleSpacePointAssnLabel")),
   fSpacePointHitAssnLabel(p.get<std::string>("SpacePointHitAssnLabel")),
-  fHitTruthAssnLabel(p.get<std::string>("HitTruthAssnLabel"))
+  fHitTruthAssnLabel(p.get<std::string>("HitTruthAssnLabel")),
+  fSliceModuleLabel(p.get<std::string>("SliceModuleLabel")),
+  fPFParticleSliceAssnLabel(p.get<std::string>("PFParticleSliceAssnLabel")),
+  fSliceHitAssnLabel(p.get<std::string>("SliceHitAssnLabel"))
   // More initializers here.
 {
   fDebug = p.get<bool>("Debug","false");
@@ -178,6 +201,15 @@ void hyperon::SpacePointTreeMaker::analyze(art::Event const& e)
   t_PFPHit_Channel.clear();
   t_PFPHit_Tick.clear();
   t_PFPHit_Width.clear();
+
+  t_PFPSpacePoint_X_NeutrinoSlice.clear();
+  t_PFPSpacePoint_Y_NeutrinoSlice.clear();
+  t_PFPSpacePoint_Z_NeutrinoSlice.clear();
+  t_PFPSpacePoint_PDG_NeutrinoSlice.clear();
+  t_PFPSpacePoint_PDGPur_NeutrinoSlice.clear();
+  t_PFPHit_Channel_NeutrinoSlice.clear();
+  t_PFPHit_Tick_NeutrinoSlice.clear();
+  t_PFPHit_Width_NeutrinoSlice.clear();
 
   t_PFPSpacePoint_X_Tracks.clear();
   t_PFPSpacePoint_Y_Tracks.clear();
@@ -216,23 +248,78 @@ void hyperon::SpacePointTreeMaker::analyze(art::Event const& e)
     throw cet::exception("SpacePointTreeMaker") << "No Hit Data Products Found!" << std::endl;
   art::fill_ptr_vector(Vect_Hit,Handle_Hit);
 
+  art::Handle<std::vector<recob::Slice>> Handle_Slice;
+  std::vector<art::Ptr<recob::Slice>> Vect_Slice;
+  if(!e.getByLabel(fSliceModuleLabel,Handle_Slice)) 
+    throw cet::exception("SpacePointTreeMaker") << "No Slice Data Products Found!" << std::endl;
+  art::fill_ptr_vector(Vect_Slice,Handle_Slice);
+
   art::FindManyP<recob::SpacePoint> Assoc_PFParticleSpacePoint(Vect_PFParticle,e,fPFParticleSpacePointAssnLabel);
   art::FindManyP<recob::Hit> Assoc_SpacePointHit(Vect_SpacePoint,e,fSpacePointHitAssnLabel);
   art::FindManyP<recob::Track> Assoc_PFParticleTrack(Vect_PFParticle,e,fPFParticleTrackAssnLabel);
   art::FindManyP<recob::Shower> Assoc_PFParticleShower(Vect_PFParticle,e,fPFParticleShowerAssnLabel);
   art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> ParticlesPerHit(Handle_Hit,e,fHitTruthAssnLabel);
 
-  // Find the neutrino PFP
+  art::FindManyP<recob::Slice> Assoc_PFParticleSlice(Vect_PFParticle,e,fPFParticleSliceAssnLabel);
+  art::FindManyP<recob::Hit> Assoc_SliceHit(Vect_Slice,e,fSliceHitAssnLabel);
+
+  // Make map between hits and spacepoints
+  for(art::Ptr<recob::SpacePoint>& spacepoint : Vect_SpacePoint){
+    std::vector<art::Ptr<recob::Hit>> hits = Assoc_SpacePointHit.at(spacepoint.key());
+    if(hits.size() == 1){
+      HitSpacePointMap[hits.at(0)] = spacepoint; 
+      SpacePointHitMap[spacepoint] = hits.at(0); 
+    }
+  } 
+
+  // Find the neutrino PFP, and get hits in neutrino slice
   size_t neutrinoID = 99999;
-  for(const art::Ptr<recob::PFParticle> &pfp : Vect_PFParticle)
-    if(pfp->IsPrimary() && isNeutrino(pfp->PdgCode()))
+  for(const art::Ptr<recob::PFParticle> &pfp : Vect_PFParticle){
+    if(pfp->IsPrimary() && isNeutrino(pfp->PdgCode())){
       neutrinoID = pfp->Self();
+      std::vector<art::Ptr<recob::Slice>> slice = Assoc_PFParticleSlice.at(pfp.key());
+      if(slice.size() == 1){
+
+        t_PFPSpacePoint_X_NeutrinoSlice.push_back(std::vector<double>());
+        t_PFPSpacePoint_Y_NeutrinoSlice.push_back(std::vector<double>());
+        t_PFPSpacePoint_Z_NeutrinoSlice.push_back(std::vector<double>());
+        t_PFPSpacePoint_PDG_NeutrinoSlice.push_back(std::vector<int>());
+        t_PFPSpacePoint_PDGPur_NeutrinoSlice.push_back(std::vector<double>());
+        t_PFPHit_Channel_NeutrinoSlice.push_back(std::vector<std::vector<double>>(3,std::vector<double>()));
+        t_PFPHit_Tick_NeutrinoSlice.push_back(std::vector<std::vector<double>>(3,std::vector<double>()));
+        t_PFPHit_Width_NeutrinoSlice.push_back(std::vector<std::vector<double>>(3,std::vector<double>()));
+
+        std::vector<art::Ptr<recob::Hit>> hits = Assoc_SliceHit.at(slice.at(0).key());
+        for(art::Ptr<recob::Hit>& hit : hits){
+          if(HitSpacePointMap.find(hit) != HitSpacePointMap.end()){
+            std::pair<int,double> truth_info = TruthMatchHit(hit,ParticlesPerHit);
+            art::Ptr<recob::SpacePoint> sp = HitSpacePointMap.at(hit);
+
+            if(!inActiveTPC(TVector3(sp->XYZ()[0],sp->XYZ()[1],sp->XYZ()[2]))) continue;          
+            if(std::isnan(sp->XYZ()[0]) || std::isnan(sp->XYZ()[1]) || std::isnan(sp->XYZ()[2])) continue;
+
+            t_PFPSpacePoint_X_NeutrinoSlice.back().push_back(sp->XYZ()[0]); 
+            t_PFPSpacePoint_Y_NeutrinoSlice.back().push_back(sp->XYZ()[1]); 
+            t_PFPSpacePoint_Z_NeutrinoSlice.back().push_back(sp->XYZ()[2]); 
+            t_PFPHit_Channel_NeutrinoSlice.back().at(hit->View()).push_back(hit->Channel());
+            t_PFPHit_Tick_NeutrinoSlice.back().at(hit->View()).push_back(hit->PeakTime());
+            t_PFPHit_Width_NeutrinoSlice.back().at(hit->View()).push_back(hit->EndTick() - hit->StartTick());
+            t_PFPSpacePoint_PDG_NeutrinoSlice.back().push_back(truth_info.first); 
+            t_PFPSpacePoint_PDGPur_NeutrinoSlice.back().push_back(truth_info.second); 
+
+          }
+        }
+      }
+    }
+  }
 
   if(neutrinoID == 99999){
     if(fDebug) std::cout << "No neutrino candidate in event" << std::endl;
     t_SpacePointTree->Fill();
     return;
   }
+
+  int hits_found=0;
 
   // Get all PFPs that are children of the neutrino, and their respective spacepoints
   int ctr = 0; // TODO: This is a crude way to find the muon candidate - should improve
@@ -241,13 +328,13 @@ void hyperon::SpacePointTreeMaker::analyze(art::Event const& e)
     ctr++;
     if(ctr == 1) continue; // cude way to ignore muon candidate 
     bool is_track=false,is_shower=false;
-      
+
     std::vector<art::Ptr<recob::Track>> pfpTracks = Assoc_PFParticleTrack.at(pfp.key());
     std::vector<art::Ptr<recob::Shower>> pfpShowers = Assoc_PFParticleShower.at(pfp.key());
 
     //if(pfpTracks.size() == 1) is_track = true;
     //if(pfpShowers.size() == 1) is_shower = true;
-     
+
     if(pfp->PdgCode() == 13) is_track = true; 
     else if(pfp->PdgCode() == 11) is_shower = true;
 
@@ -289,7 +376,9 @@ void hyperon::SpacePointTreeMaker::analyze(art::Event const& e)
 
       if(hits.at(0)->View() != 0 && hits.at(0)->View() != 1 && hits.at(0)->View() != 2)
         throw cet::exception("SpacePointTreeMaker") << "Hit has unrecognised View number " << hits.at(0)->View() << std::endl;
-        
+
+      hits_found++;  
+
       t_PFPSpacePoint_X.back().push_back(sp->XYZ()[0]); 
       t_PFPSpacePoint_Y.back().push_back(sp->XYZ()[1]); 
       t_PFPSpacePoint_Z.back().push_back(sp->XYZ()[2]); 
@@ -322,11 +411,16 @@ void hyperon::SpacePointTreeMaker::analyze(art::Event const& e)
       t_PFPHit_Tick_Showers.push_back(t_PFPHit_Tick.back());
       t_PFPHit_Width_Showers.push_back(t_PFPHit_Width.back());
     }
-   
+
   } // pfp
+
+  std::cout << "Hits belonging to tracks/showers: " << hits_found << std::endl;
 
   // Fill tree! 
   t_SpacePointTree->Fill();
+  t_SpacePointTree_NeutrinoSlice->Fill();
+  t_SpacePointTree_Tracks->Fill();
+  t_SpacePointTree_Showers->Fill();
 
 }
 
@@ -339,6 +433,7 @@ void hyperon::SpacePointTreeMaker::beginJob(){
   art::ServiceHandle<art::TFileService> tfs;
 
   t_SpacePointTree=tfs->make<TTree>("SpacePointTree","Wire Tree");
+  t_SpacePointTree_NeutrinoSlice=tfs->make<TTree>("SpacePointTree_NeutrinoSlice","Wire Tree");
   t_SpacePointTree_Tracks=tfs->make<TTree>("SpacePointTree_Tracks","Wire Tree");
   t_SpacePointTree_Showers=tfs->make<TTree>("SpacePointTree_Showers","Wire Tree");
 
@@ -354,6 +449,19 @@ void hyperon::SpacePointTreeMaker::beginJob(){
   t_SpacePointTree->Branch("PFPHit_Width","vector<vector<vector<double>>>",&t_PFPHit_Width);
   t_SpacePointTree->Branch("PFPSpacePoint_PDG",&t_PFPSpacePoint_PDG);
   t_SpacePointTree->Branch("PFPSpacePoint_PDGPur",&t_PFPSpacePoint_PDGPur);
+
+  t_SpacePointTree_NeutrinoSlice->Branch("EventID",&t_EventID);
+  t_SpacePointTree_NeutrinoSlice->Branch("run",&t_run);
+  t_SpacePointTree_NeutrinoSlice->Branch("subrun",&t_subrun);
+  t_SpacePointTree_NeutrinoSlice->Branch("event",&t_event);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPSpacePoint_X",&t_PFPSpacePoint_X_NeutrinoSlice);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPSpacePoint_Y",&t_PFPSpacePoint_Y_NeutrinoSlice);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPSpacePoint_Z",&t_PFPSpacePoint_Z_NeutrinoSlice);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPHit_Channel","vector<vector<vector<double>>>",&t_PFPHit_Channel_NeutrinoSlice);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPHit_Tick","vector<vector<vector<double>>>",&t_PFPHit_Tick_NeutrinoSlice);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPHit_Width","vector<vector<vector<double>>>",&t_PFPHit_Width_NeutrinoSlice);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPSpacePoint_PDG",&t_PFPSpacePoint_PDG_NeutrinoSlice);
+  t_SpacePointTree_NeutrinoSlice->Branch("PFPSpacePoint_PDGPur",&t_PFPSpacePoint_PDGPur_NeutrinoSlice);
 
   t_SpacePointTree_Tracks->Branch("EventID",&t_EventID);
   t_SpacePointTree_Tracks->Branch("run",&t_run);
@@ -399,5 +507,28 @@ void hyperon::SpacePointTreeMaker::endSubRun(const art::SubRun& sr)
 {
 
 }
+
+std::pair<int,double> hyperon::SpacePointTreeMaker::TruthMatchHit(const art::Ptr<recob::Hit> hit,const art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particlesperhit){
+
+  std::vector<simb::MCParticle const*> particleVec;
+  std::vector<anab::BackTrackerHitMatchingData const*> matchVec;
+  particlesperhit.get(hit.key(),particleVec,matchVec);
+
+  int pdg = 0;
+  double maxe = 0.0;
+  double e = 0.0;
+  for(size_t i_particle=0;i_particle<particleVec.size();++i_particle){
+    e += matchVec.at(i_particle)->energy;
+    if(matchVec.at(i_particle)->energy > maxe){
+      pdg = particleVec.at(i_particle)->PdgCode();
+      maxe = matchVec.at(i_particle)->energy;
+    }
+  }
+
+  return std::make_pair(pdg,e/maxe);
+
+}
+
+
 
 DEFINE_ART_MODULE(hyperon::SpacePointTreeMaker)

@@ -77,6 +77,10 @@ double TrackTrueLength;
 int TrackTrueOrigin; // 0 = neutrino , 1 = primary , 2 = hyperon decay, 3 = other, 4 = Kaon decay, 5 = Sigma0 decay, 6 = K0S/K0L, 7 = K0S/K0L decay
 double TrackTruthPurity;
 
+// Shower variables
+double ShowerDirectionX,ShowerDirectionY,ShowerDirectionZ;
+double ShowerOpeningAngle;
+
 inline void SetVertex(TVector3 V);
 inline void SetTrackPositions(TVector3 Start,TVector3 End);
 inline void Print();

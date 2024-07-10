@@ -17,10 +17,17 @@ const double C_t = 818.351;
 const double cos60 = 0.5;
 const double sin60 = sqrt(3)/2.0;
 
-inline int U_wire(TVector3 pos) { return A_w*(-sin60*pos.Y()+cos60*pos.Z())+C_U; }
-inline int V_wire(TVector3 pos) { return A_w*(sin60*pos.Y()+cos60*pos.Z())+C_V; }
-inline int Y_wire(TVector3 pos) { return A_w*pos.Z() + C_Y; }
-inline int tick(TVector3 pos) { return A_t*pos.X() + C_t; }
+inline double U_wire(TVector3 pos) { return A_w*(-sin60*pos.Y()+cos60*pos.Z())+C_U; }
+inline double V_wire(TVector3 pos) { return A_w*(sin60*pos.Y()+cos60*pos.Z())+C_V; }
+inline double Y_wire(TVector3 pos) { return A_w*pos.Z() + C_Y; }
+inline double tick(TVector3 pos) { return A_t*pos.X() + C_t; }
+
+inline std::pair<double,double> WireTick(TVector3 pos,int plane){
+  if(plane == 0) return std::make_pair(U_wire(pos),tick(pos));
+  if(plane == 1) return std::make_pair(V_wire(pos),tick(pos));
+  if(plane == 2) return std::make_pair(Y_wire(pos),tick(pos));
+  else throw std::invalid_argument("Position_to_Wire: Invalid plane number");
+}
 
 inline double dUdt(TVector3 dir){ return A_w/A_t*(-sin60*dir.Y()/dir.X()+cos60*dir.Z()/dir.X()); }
 inline double dVdt(TVector3 dir){ return A_w/A_t*(sin60*dir.Y()/dir.X()+cos60*dir.Z()/dir.X()); }
@@ -49,6 +56,40 @@ inline double AngleY(TVector3 dir){
    if(invert && angle < 0) angle += 180;
    if(invert && angle > 0) angle -= 180;
    return angle;
+}
+
+inline double PointHitDistanceU(TVector3 point,double channel,double tick){
+
+TVector3 a((tick-C_t)/A_t,0,2*(channel-C_U)/A_w);
+TVector3 n(0.0,0.5,sqrt(3)/2);
+
+return ((a-point)-((a-point).Dot(n))*n).Mag();
+
+}
+
+inline double PointHitDistanceV(TVector3 point,double channel,double tick){
+
+TVector3 a((tick-C_t)/A_t,0,2*(channel-C_V)/A_w);
+TVector3 n(0.0,0.5,-sqrt(3)/2);
+
+return ((a-point)-((a-point).Dot(n))*n).Mag();
+
+}
+
+inline double PointHitDistanceY(TVector3 point,double channel,double tick){
+
+TVector3 a((tick-C_t)/A_t,0,(channel-C_Y)/A_w);
+TVector3 n(0,1.0,0);
+
+return ((a-point)-((a-point).Dot(n))*n).Mag();
+
+}
+
+inline double PointHitDistance(TVector3 point,double channel,double tick,int plane){
+  if(plane == 0) return PointHitDistanceU(point,channel,tick); 
+  else if(plane == 1) return PointHitDistanceV(point,channel,tick); 
+  else if(plane == 2) return PointHitDistanceY(point,channel,tick); 
+  else return 1e10; 
 }
 
 #endif

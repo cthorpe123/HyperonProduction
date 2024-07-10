@@ -195,6 +195,10 @@ RecoParticle SubModuleReco::MakeRecoParticle(const art::Ptr<recob::PFParticle> &
       GetTrackData(pfp,P);
       GetVertexData(pfp,P);
    }
+   else if(pfpShowers.size() == 1){
+      GetShowerData(pfp,P);
+      GetVertexData(pfp,P);
+   }
 
    return P;
 }
@@ -234,16 +238,26 @@ void SubModuleReco::GetTrackData(const art::Ptr<recob::PFParticle> &pfp,RecoPart
    SetTrackVariables(P,trk);
 
    if(!IsData) TruthMatch(trk,P);
-
-   if(!IsData){
-     std::vector<std::pair<int,double>> pdgs = EnhancedTruthMatch(trk);
-     std::cout << pdgs.at(0).first << " " << pdgs.at(0).second << " " <<  pdgs.at(1).first << " " << pdgs.at(1).second << " " << pdgs.at(2).first << " " << pdgs.at(2).second << std::endl;
-   }
-
    if(DoGetPIDs) GetPIDs(trk,P);
    
-   theData.TrackStarts.push_back(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z()));
-   P.Index = theData.TrackStarts.size() - 1;
+   //theData.TrackStarts.push_back(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z()));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void SubModuleReco::GetShowerData(const art::Ptr<recob::PFParticle> &pfp,RecoParticle &P){
+
+   std::vector<art::Ptr<recob::Shower>> pfpShowers = Assoc_PFParticleShower->at(pfp.key());
+
+   if(pfpShowers.size() != 1) return;
+
+   art::Ptr<recob::Shower> shr = pfpShowers.at(0);
+  
+   P.ShowerDirectionX = shr->Direction().X();  
+   P.ShowerDirectionY = shr->Direction().Y();  
+   P.ShowerDirectionZ = shr->Direction().Z();  
+   P.ShowerOpeningAngle = shr->OpenAngle();
+ 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////

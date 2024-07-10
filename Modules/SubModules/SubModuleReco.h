@@ -120,6 +120,7 @@ class SubModuleReco {
 
       void GetPFPMetadata(const art::Ptr<recob::PFParticle> &pfp,RecoParticle &P);
       void GetTrackData(const art::Ptr<recob::PFParticle> &pfp,RecoParticle &P);
+      void GetShowerData(const art::Ptr<recob::PFParticle> &pfp,RecoParticle &P);
       void TruthMatch(const art::Ptr<recob::Track> &trk,RecoParticle &P);
       void GetPIDs(const art::Ptr<recob::Track> &trk,RecoParticle &P);
       void GetVertexData(const art::Ptr<recob::PFParticle> &pfp,RecoParticle &P);
